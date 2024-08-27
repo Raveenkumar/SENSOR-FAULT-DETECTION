@@ -170,3 +170,10 @@ project_documents/HLD.docx
 notebook/Prediction_Batch_files/
 notebook/Training_Batch_Files/
 notebook/Testing.ipynb
+
+
+# vscode spell checker
+.vscode/
+
+#temporary disable artifact
+artifacts/
