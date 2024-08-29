@@ -170,3 +170,15 @@ project_documents/HLD.docx
 notebook/Prediction_Batch_files/
 notebook/Training_Batch_Files/
 notebook/Testing.ipynb
+
+
+# vscode spell checker
+.vscode/
+
+#temporary disable artifact
+artifacts/
+
+# some files
+src/training_pipeline.py
+static/datadrift.html
+static/eda.html

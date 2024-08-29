@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Upload and Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Animated Wafer Fault Detection Text -->
+        <h1 class="animated-heading">Wafer Fault Detection</h1>
+
+        <form id="uploadForm">
+            <div class="upload-section">
+                <label for="folderUpload">Choose a folder for prediction:</label>
+                <input type="file" id="folderUpload" name="folderUpload" webkitdirectory mozdirectory required>
+            </div>
+            <button type="submit" class="submit-btn">Upload</button>
+        </form>
+        <div id="predictionSection" class="prediction-section">
+            <button id="predictBtn" class="submit-btn">Predict</button>
+        </div>
+
+        <!-- Training Button -->
+        <div class="train-section">
+            <button id="trainBtn" class="submit-btn">Train Model</button>
+        </div>
+        <div id="trainingStatus" class="training-status"></div>
+    </div>
+
+    <script src="{{ url_for('static', path='/js/script.js') }}"></script>
+</body>
+</html>

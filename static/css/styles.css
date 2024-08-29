@@ -1,0 +1,130 @@
+/* General styling */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #74ebd5, #acb6e5);  /* Gradient background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    animation: fadeInBackground 1.5s ease-in-out;
+}
+
+/* Container for the entire form */
+.container, .dashboard-container {
+    background: rgba(255, 255, 255, 0.85);  /* Semi-transparent white */
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+    animation: slideInUp 0.7s ease-in-out;
+}
+
+/* Header Styling */
+h1, h2 {
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+/* Plot and file container */
+.plot-container, .file-container {
+    margin-top: 30px;
+    text-align: left;
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+/* Hidden prediction section until upload */
+.prediction-section {
+    display: none;
+    margin-top: 20px;
+}
+
+.prediction-section.show {
+    display: block;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Buttons */
+.submit-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 10px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.submit-btn:hover {
+    background-color: #45a049;
+    transform: scale(1.05);
+}
+
+.submit-btn:active {
+    transform: scale(0.95);
+}
+
+/* Bad Raw Data Files List */
+#badRawFilesList {
+    list-style-type: none;
+    padding: 0;
+}
+
+#badRawFilesList li {
+    background: #f8d7da;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+    animation: slideInRight 0.5s ease-in-out;
+}
+
+/* Animations */
+@keyframes fadeInBackground {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Wafer Fault Detection Animated Heading */
+.animated-heading {
+    font-size: 3rem;
+    color: #4CAF50;
+    animation: fadeInBackground 2s ease-in-out, colorChange 5s infinite alternate;
+    text-shadow: 2px 2px #333;
+}
+
+/* Keyframes for Color Animation */
+@keyframes colorChange {
+    from { color: #4CAF50; }
+    to { color: #FF5733; }
+}
+
+/* Training Status Styling */
+.training-status {
+    margin-top: 20px;
+    font-size: 1.2rem;
+    color: #333;
+    animation: fadeIn 1s ease-in-out;
+}
