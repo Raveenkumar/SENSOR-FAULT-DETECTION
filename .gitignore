@@ -177,3 +177,8 @@ notebook/Testing.ipynb
 
 #temporary disable artifact
 artifacts/
+
+# some files
+src/training_pipeline.py
+static/datadrift.html
+static/eda.html

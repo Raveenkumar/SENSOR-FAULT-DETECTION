@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Validation and Prediction Dashboard</h1>
+        
+        <!-- Validation Summary -->
+        <div class="plot-container">
+            <h2>Validation Summary</h2>
+            <canvas id="validationPlot"></canvas>
+            <canvas id="statusReasonPlot"></canvas>
+        </div>
+
+        <!-- Prediction Summary -->
+        <div class="plot-container">
+            <h2>Prediction Summary</h2>
+            <canvas id="predictionPlot"></canvas>
+        </div>
+
+        <!-- Bad Raw Files -->
+        <div class="file-container">
+            <h2>Bad Raw Data Files</h2>
+            <ul id="badRawFilesList"></ul>
+        </div>
+
+        <!-- Download Buttons -->
+        <div class="download-buttons">
+            <button class="submit-btn" id="downloadValidationReport">Download Validation Report</button>
+            <button class="submit-btn" id="downloadFailedFiles">Download Failed Files</button>
+            <button class="submit-btn" id="downloadPredictions">Download Predictions</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', path='/js/dashboard.js') }}"></script>
+</body>
+</html>

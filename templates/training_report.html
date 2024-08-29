@@ -1,0 +1,30 @@
+<!-- templates/training_results.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Training Results</h1>
+
+        <!-- Display model-related data -->
+        <div class="results-section">
+            <h2>Model Performance</h2>
+            <p>Accuracy: {{ results['accuracy'] }}</p>
+            <p>ROC Score: {{ results['roc_score'] }}</p>
+            <p>Other Scores: {{ results['other_scores'] }}</p>
+        </div>
+
+        <!-- EDA and Data Drift Reports -->
+        <div class="reports-section">
+            <h2>Reports</h2>
+            <a href="{{ eda_url }}" target="_blank" class="submit-btn">View EDA Report</a>
+            <a href="{{ datadrift_url }}" target="_blank" class="submit-btn">View Data Drift Report</a>
+        </div>
+    </div>
+</body>
+</html>
