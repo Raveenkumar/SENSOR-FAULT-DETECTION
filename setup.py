@@ -1,5 +1,4 @@
 from setuptools import setup,find_packages
-from sensor_package.constants import *
 
 setup(
     name = "SENSOR-FAULT-DETECTION",

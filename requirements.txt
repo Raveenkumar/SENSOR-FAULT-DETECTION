@@ -21,4 +21,6 @@ fastapi
 uvicorn
 jinja2
 python-multipart
--e .
+python-box
+openpyxl
+# -e .
