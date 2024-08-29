@@ -9,6 +9,7 @@ import pandas as pd
 from evidently import ColumnMapping
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset
+from src.entity.artifact_entity import RawDataValidationArtifacts
 
 class RawDataValidation:
     def __init__(self,config: Union[TrainingRawDataValidationConfig, PredictionRawDataValidationConfig], folder_path: Path):
@@ -194,7 +195,15 @@ class RawDataValidation:
             logger.error(msg=SensorFaultException(error_message=e,error_detail=sys))
             raise SensorFaultException(error_message=e,error_detail=sys)        
     
-    def initialize_rawdata_validation_process(self):
+    def initialize_rawdata_validation_process(self) -> RawDataValidationArtifacts:
+        """initialize_rawdata_validation_process :Used for start the raw validation process
+
+        Raises:
+            SensorFaultException: Custom Exception
+
+        Returns:
+            RawDataValidationArtifacts: provides good raw folder path, bad raw folder path ,validation_logs.xlsx file path
+        """
         try:
             # create good raw folder
             os.makedirs(self.good_raw_data_path,exist_ok=True)
@@ -225,6 +234,11 @@ class RawDataValidation:
 
                 # If all validations pass, move to good_raw_folder
                 shutil.move(src=file_path, dst=self.good_raw_data_path)
+            
+            result = RawDataValidationArtifacts(good_raw_data_folder=self.good_raw_data_path,
+                                                bad_raw_data_folder=self.bad_raw_data_path,
+                                                validation_log_file_path=self.validation_report_file_path)
+            return result
                 
         except Exception as e:
             # logger.error(e)
