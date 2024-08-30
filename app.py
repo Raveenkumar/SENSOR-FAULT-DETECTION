@@ -51,7 +51,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
 
             # Read the file content asynchronously
             content = await file.read()
-
+            
             # Check if content is empty
             if not content:
                 logger.warning(f"File {file_name} is empty. Skipping.")
@@ -88,7 +88,7 @@ def get_training_results_route(request: Request):
 
 @app.get("/validation_summary")
 def get_validation_results():
-    validation_logs = pd.read_excel('./data/validation_logs.xlsx')
+    validation_logs = pd.read_excel(PredictionRawDataValidationConfig.validation_report_file_path)
     
     summary = validation_logs['STATUS'].value_counts().to_dict()
     
@@ -118,7 +118,7 @@ def get_bad_raw_files():
 
 @app.get("/download/validation_report")
 def download_validation_report():
-    return FileResponse('./data/validation_logs.xlsx', filename='validation_logs.xlsx')
+    return FileResponse(PredictionRawDataValidationConfig.validation_report_file_path, filename='validation_logs.xlsx')
 
 @app.get("/download/failed_files")
 def download_failed_files():

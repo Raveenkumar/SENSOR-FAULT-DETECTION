@@ -2,7 +2,7 @@ import sys,os,re,shutil
 from typing import Union,Literal
 from src.entity.config_entity import TrainingRawDataValidationConfig, PredictionRawDataValidationConfig
 from pathlib import Path
-from src.utilities.utils import read_json,read_csv_file,append_log_to_excel
+from src.utilities.utils import read_json,read_csv_file,append_log_to_excel,create_folder_using_file_path,create_folder_using_folder_path
 from src.logger import logger
 from src.exception import SensorFaultException
 import pandas as pd
@@ -34,6 +34,7 @@ class RawDataValidation:
         """
         
         try:
+            
             # check file_name match to file format  
             if re.match(pattern=self.regex_file_name_format,string=file_name):
                 status = "Passed"
@@ -48,8 +49,8 @@ class RawDataValidation:
             return status
         
         except Exception as e:
-            logger.error(msg=SensorFaultException(error_message=e,error_detail=sys))
-            raise SensorFaultException(error_message=e,error_detail=sys)
+            logger.error(msg=SensorFaultException(error_message=str(e),error_detail=sys))
+            raise SensorFaultException(error_message=str(e),error_detail=sys)
             
     def numberofcolumns_validation(self, file_name:str, dataframe:pd.DataFrame) -> Literal['Passed'] | Literal['Failed']:
         """numberofcolumns_validation : Used for validate the number of columns in file
@@ -80,8 +81,8 @@ class RawDataValidation:
             return status
             
         except Exception as e:
-            logger.error(msg=SensorFaultException(error_message=e,error_detail=sys))
-            raise SensorFaultException(error_message=e,error_detail=sys)
+            logger.error(msg=SensorFaultException(error_message=str(e),error_detail=sys))
+            raise SensorFaultException(error_message=str(e),error_detail=sys)
         
     def columnsdata_validation(self, file_name: str, dataframe: pd.DataFrame) -> Literal['Passed'] | Literal['Failed']:
         """columnsdata_validation : Used for Columns data (column name, column type, column series wise) validation
@@ -184,7 +185,7 @@ class RawDataValidation:
             return status
         
         except Exception as e:
-            logger.error(msg=SensorFaultException(error_message=e,error_detail=sys))
+            logger.error(msg=SensorFaultException(error_message=str(e),error_detail=sys))
             raise SensorFaultException(error_message=e,error_detail=sys)
     
     def check_datadrift(self,purpose,current_data,reference_data ):
@@ -192,7 +193,7 @@ class RawDataValidation:
             pass
         except Exception as e:
             # logger.error(e)
-            logger.error(msg=SensorFaultException(error_message=e,error_detail=sys))
+            logger.error(msg=SensorFaultException(error_message=str(e),error_detail=sys))
             raise SensorFaultException(error_message=e,error_detail=sys)        
     
     def initialize_rawdata_validation_process(self) -> RawDataValidationArtifacts:
@@ -205,9 +206,11 @@ class RawDataValidation:
             RawDataValidationArtifacts: provides good raw folder path, bad raw folder path ,validation_logs.xlsx file path
         """
         try:
-            # create good raw folder
-            os.makedirs(self.good_raw_data_path,exist_ok=True)
-            os.makedirs(self.bad_raw_data_path)
+            logger.info("started the raw data validation process!")
+            # create folder for needed
+            create_folder_using_folder_path(self.good_raw_data_path)
+            create_folder_using_folder_path(self.bad_raw_data_path)
+            create_folder_using_file_path(self.validation_report_file_path)
             
             for file in os.listdir(path=self.data_files_path):
                 file_path = Path(os.path.join(self.data_files_path, file))
@@ -238,11 +241,12 @@ class RawDataValidation:
             result = RawDataValidationArtifacts(good_raw_data_folder=self.good_raw_data_path,
                                                 bad_raw_data_folder=self.bad_raw_data_path,
                                                 validation_log_file_path=self.validation_report_file_path)
+            logger.info(msg=f"started the raw data validation Ended!: Artifacts:{result}")
             return result
                 
         except Exception as e:
             # logger.error(e)
-            logger.error(msg=SensorFaultException(error_message=e,error_detail=sys))
+            logger.error(msg=SensorFaultException(error_message=str(e),error_detail=sys))
             raise SensorFaultException(error_message=e,error_detail=sys)
              
                

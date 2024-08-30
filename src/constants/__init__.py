@@ -11,6 +11,19 @@ PREDICTION_DATA_FOLDER_NAME: str = 'prediction_data'
 PREDICTION_RAW_DATA: str = "prediction_raw_data"
 GOOD_RAW_DATA_FOLDER_NAME: str = "good_raw_data"
 BAD_RAW_DATA_FOLDER_NAME: str = "bad_raw_data"
+EVALUATION_DATA_FOLDER_NAME: str  = "evaluation_data"
+TRAINING_VALIDATION_LOG_FILE: str = "training_validation_logs.xlsx"
+PREDICTION_VALIDATION_LOG_FILE: str = "prediction_validation_logs.xlsx"
+
+
+# transformation constants
+OLD_WAFER_COLUMN_NAME: str = "Unnamed: 0"
+OLD_OUTPUT_COLUMN_NAME: str = "Good/Bad"
+NEW_WAFER_COLUMN_NAME: str = "Wafer"
+NEW_OUTPUT_COLUMN_NAME: str = "Output"
+FINAL_TRAINING_FILE_FOLDER_NAME: str = "training_file_data"
+FINAL_PREDICTION_FILE_FOLDER_NAME: str = "prediction_file_data"
+FINAL_FILE_NAME: str = "final_file.csv"
 
 
 

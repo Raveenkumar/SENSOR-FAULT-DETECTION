@@ -10,6 +10,45 @@ from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
 from datetime import datetime
 
+
+def create_folder_using_folder_path(folder_path:Path):
+    """create_folder_using_folder_path :Used for create a folder using folder path
+
+    Args:
+        folder_path (Path): folder_path to create
+
+    Raises:
+        error_message: CustomException
+    """
+    try:
+        os.makedirs(folder_path,exist_ok=True)
+        logger.info(f"create folder using folder path :: Status:Successful :: folder_path:{folder_path}")
+    except Exception as e:
+        error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(f"create folder using folder path :: Status:Failed :: folder_path:{folder_path} :: Error:{error_message}")
+        raise error_message
+
+
+def create_folder_using_file_path(file_path:Path):
+    """create_folder_using_file_path :Used for create a folder using file path
+
+    Args:
+        file_path (Path): file path we  can get folder name
+
+    Raises:
+        error_message: CustomException
+    """
+    try:
+        folder_name,_ = os.path.split(file_path)
+        os.makedirs(folder_name)
+        logger.info(f"create folder using file path :: Status:Successful :: folder_path:{file_path}")
+    except Exception as e:
+        error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(f"create folder using file path :: Status:Failed :: folder_path:{file_path} :: Error:{error_message}")
+        raise error_message
+
+
+
 def read_json(file_path:Path) -> ConfigBox:
     """read_json: used for reading json file 
 
@@ -28,8 +67,9 @@ def read_json(file_path:Path) -> ConfigBox:
         return ConfigBox(json_data)    
     
     except Exception as e:
-       logger.error(msg=SensorFaultException(error_message=e,error_detail=sys))
-       raise SensorFaultException(error_message=e,error_detail=sys)   
+        error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(f"read json data :: file_path:{file_path} :: Status:Failed :: Error:{error_message}")
+        raise error_message  
 
 def read_csv_file(file_path:Path) -> pd.DataFrame:
     """read_csv_file :: Used for read the csv file using pandas
@@ -51,8 +91,9 @@ def read_csv_file(file_path:Path) -> pd.DataFrame:
         return dataframe    
     
     except Exception as e:
-       logger.error(msg=SensorFaultException(error_message=e,error_detail=sys))
-       raise SensorFaultException(error_message=e,error_detail=sys)
+        error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(f"read csv data :: file_path:{file_path} :: Status:Failed :: Error:{error_message}")
+        raise error_message
 
 
 def style_excel(excel_filename):
