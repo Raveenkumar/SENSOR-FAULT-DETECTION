@@ -1,5 +1,5 @@
 # general constants
-
+ARTIFACT_FOLDER_NAME = "artifact"
 
 
 # validation constants
@@ -26,7 +26,8 @@ FINAL_PREDICTION_FILE_FOLDER_NAME: str = "prediction_file_data"
 FINAL_FILE_NAME: str = "final_file.csv"
 
 
-
+#s3 constants
+BUCKET_NAME = 'wafersensorsdata'
 
 #api_constants
 APP_HOST = "0.0.0.0"

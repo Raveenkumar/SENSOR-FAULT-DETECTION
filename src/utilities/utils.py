@@ -1,14 +1,15 @@
 from box import ConfigBox
 from pathlib import Path
 import json
+import shutil
 import os,sys
-import pandas as pd
-from src.logger import logger
-from src.exception import SensorFaultException
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
 from datetime import datetime
+from src.logger import logger
+from src.exception import SensorFaultException
+from src.entity.config_entity import BaseArtifactConfig
 
 
 def create_folder_using_folder_path(folder_path:Path):
@@ -28,7 +29,6 @@ def create_folder_using_folder_path(folder_path:Path):
         logger.error(f"create folder using folder path :: Status:Failed :: folder_path:{folder_path} :: Error:{error_message}")
         raise error_message
 
-
 def create_folder_using_file_path(file_path:Path):
     """create_folder_using_file_path :Used for create a folder using file path
 
@@ -46,8 +46,6 @@ def create_folder_using_file_path(file_path:Path):
         error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
         logger.error(f"create folder using file path :: Status:Failed :: folder_path:{file_path} :: Error:{error_message}")
         raise error_message
-
-
 
 def read_json(file_path:Path) -> ConfigBox:
     """read_json: used for reading json file 
@@ -94,7 +92,6 @@ def read_csv_file(file_path:Path) -> pd.DataFrame:
         error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
         logger.error(f"read csv data :: file_path:{file_path} :: Status:Failed :: Error:{error_message}")
         raise error_message
-
 
 def style_excel(excel_filename):
     """style_excel : Used for style the append_log_to_excel method
@@ -204,3 +201,41 @@ def append_log_to_excel(filename:str, status:str, status_reason: str, remark:str
         logger.info("File:log_file.xlsx  :: Status:created")
         # logger.info(f"File:log_file.xlsx Data added :: Status:Successful :: Data:{new_df.to_dict()}")
         logger.info("File:log_file.xlsx :: Status:Data added")
+
+def format_as_s3_path(path:Path) -> str:
+    """format_as_s3_path :Used for convert path to s3_path format
+
+    Args:
+        path (Path): it can be window path or other path format
+
+    Raises:
+        error_message: Custom Exception
+
+    Returns:
+        str: s3_path
+    """
+    try:
+        s3_path  = str(path)
+        s3_path = s3_path.replace('\\','/')+'/'
+        logger.info(f'convert path:{path} to s3_path:{s3_path} successfully')
+        return s3_path
+    except Exception as e:
+        error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(f"format_as_s3_path convert path to s3_path :: file_path:{path} :: Status:Failed :: Error:{error_message}")
+        raise error_message  
+    
+def delete_artifact_folder() -> None:
+    """delete_artifact_folder :Used for drop the folder artifact after completed prediction or training process is completed
+
+    Raises:
+        error_message: Custom Exception
+    """
+    try:
+        shutil.rmtree(BaseArtifactConfig.artifact_base_dir)
+        logger.info("delete artifact folder:: Status: Successfully")
+    except Exception as e:
+        error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(f"delete_artifact_folder  ::  Status:Failed :: Error:{error_message}")
+        raise error_message
+    
+    

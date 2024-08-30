@@ -11,7 +11,8 @@ TIMESTAMP: str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 @dataclass
 class BaseArtifactConfig:
     timestamp: str = TIMESTAMP
-    artifact_dir: Path = Path(os.path.join("artifacts",timestamp))
+    artifact_base_dir = Path(ARTIFACT_FOLDER_NAME)
+    artifact_dir:Path = artifact_base_dir / timestamp
     
 
 @dataclass
