@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from src.constants import *
 from pathlib import Path
+from pandas import DataFrame
 
 # raw data validation artifacts
 @dataclass
@@ -15,6 +16,9 @@ class RawDataValidationArtifacts:
 @dataclass
 class RawDataTransformationArtifacts:
     final_file_path:Path    
-    
+
+@dataclass
+class DataIngestionArtifact:
+    input_dataframe:DataFrame
    
 

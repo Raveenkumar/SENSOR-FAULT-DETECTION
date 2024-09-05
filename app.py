@@ -3,14 +3,13 @@ from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
+from pathlib import Path
 import pandas as pd
 from uvicorn import run as app_run
 from src.constants import APP_HOST, APP_PORT
 from src.entity.config_entity import PredictionRawDataValidationConfig
 from src.logger import logger
-
-# Import your training pipeline module
-from src.training_pipeline import train_model, get_training_results  # Assuming these functions exist
+from src.pipeline.train_models import training_model, get_training_results
 
 app = FastAPI()
 
@@ -68,23 +67,32 @@ async def upload_files(files: list[UploadFile] = File(...)):
 
     return JSONResponse({"message": "Files uploaded successfully"})
 
+## training related----start here----
+training_status = {"completed": False}
+async def train_model():
+    training_model()
+    training_status["completed"] = True
+
 @app.get("/train")
 async def train_route(request: Request, background_tasks: BackgroundTasks):
-    # Add the training task to run in the background
     background_tasks.add_task(train_model)
-    # Render a training page with animated text
     return templates.TemplateResponse("training.html", {"request": request})
 
 @app.get("/training_results")
-def get_training_results_route(request: Request):
-    # Fetch training results like accuracy, scores, etc.
-    results = get_training_results()  # Assuming this function retrieves the results
-    return templates.TemplateResponse("training_results.html", {
+async def get_training_results_route(request: Request):
+    # Check if training is completed
+    if not training_status["completed"]:
+        return JSONResponse(content={"status": "Training in progress"}, status_code=202)
+    
+    results = get_training_results()  # Replace with actual code to fetch results
+    return templates.TemplateResponse("training_report.html", {
         "request": request,
         "results": results,
         "eda_url": "/static/eda.html",
         "datadrift_url": "/static/datadrift.html"
-    })
+    })  
+## training related----end here----
+
 
 @app.get("/validation_summary")
 def get_validation_results():
@@ -125,7 +133,7 @@ def download_failed_files():
     return FileResponse('./data/bad_raw_data.zip', filename='failed_files.zip')
 
 @app.get("/download/predictions")
-def download_predictions():
+def download_predictions() -> FileResponse:
     return FileResponse('./data/predictions.csv', filename='predictions.csv')
 
 if __name__ == "__main__":

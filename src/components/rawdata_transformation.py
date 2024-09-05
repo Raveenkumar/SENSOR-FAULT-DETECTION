@@ -2,6 +2,7 @@ import os,sys
 from pathlib import Path
 from typing import Union
 import pandas as pd
+import numpy as np
 from src.logger import logger
 from src.exception import SensorFaultException
 from src.entity.artifact_entity import RawDataValidationArtifacts,RawDataTransformationArtifacts
@@ -51,9 +52,32 @@ class RawDataTransformation:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"Convert good_raw_files into single file :: Status:Failed :: Error:{error_message}")
             raise error_message
-            
     
-    def rename_column_names(self,merge_df:pd.DataFrame,output_file:Path):
+    def reformat_target_variable(self,merge_df:pd.DataFrame) -> pd.DataFrame:
+        """reformat_target_variable :Used for change the values in target variable [-1,1] to [1,0] for model conventions
+
+        Args:
+            merge_df (pd.DataFrame): dataframe
+
+        Raises:
+            error_message: Custom Exception
+
+        Returns:
+            pd.DataFrame: reformated target variable dataframe
+        """
+        try:
+            if self.config.old_output_column_name in merge_df.columns.to_list():
+                target_variable = self.config.old_output_column_name
+                merge_df[target_variable] = np.where(merge_df[target_variable]==-1,1,0)
+                logger.info(msg=f"reformat_target_variable :: Status:Success :: Target_variable:{target_variable}  reformated data:[-1,1]->[1,0]")
+            return merge_df
+        except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"reformat_target_variable :: Status:Failed :: Error:{error_message}")
+            raise error_message
+                
+    
+    def rename_column_names(self,merge_df:pd.DataFrame,output_file:Path) -> None:
         """rename_column_names :Used for rename the column 
 
         Args:
@@ -69,12 +93,12 @@ class RawDataTransformation:
             # before rename the column confirm it  transformation also used in prediction <prediction file can't contain output column>
             if self.config.old_wafer_column_name in merge_file_columns:
                 columns_data = {self.config.old_wafer_column_name:self.config.new_wafer_column_name}
-                merge_df.rename(columns=columns_data)
+                merge_df.rename(columns=columns_data,inplace=True)
                 logger.info(msg=f"Rename_column_names :: Status:Success :: Columns data:{columns_data}")
             
             if self.config.old_output_column_name in merge_file_columns:
                 columns_data = {self.config.old_output_column_name:self.config.new_output_column_name}
-                merge_df.rename(columns=columns_data)
+                merge_df.rename(columns=columns_data,inplace=True)
                 logger.info(msg=f"Rename_column_names :: Status:Success :: Columns data:{columns_data}")    
                 
             
@@ -86,7 +110,7 @@ class RawDataTransformation:
             logger.error(msg=f"Rename_column_names :: Status:Failed :: Error:{error_message}")
             logger.info(f"good raw data merged to single file:: Status: Failed")
             raise error_message
-        
+    
         
     def initialize_data_transformation_process(self) -> RawDataTransformationArtifacts:
         """initialize_data_transformation_process:Used for start the raw data transformation process
@@ -103,6 +127,8 @@ class RawDataTransformation:
             create_folder_using_file_path(self.merge_file_path)
             
             merge_df = self.convert_good_raw_into_single_file(self.raw_data_folder)
+            
+            merge_df = self.reformat_target_variable(merge_df=merge_df)
             
             self.rename_column_names(merge_df=merge_df,output_file=self.merge_file_path)
             

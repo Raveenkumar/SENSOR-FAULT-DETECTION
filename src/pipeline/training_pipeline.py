@@ -7,6 +7,8 @@ from src.logger import logger
 from src.exception import SensorFaultException
 from src.components.rawdata_validation import RawDataValidation
 from src.components.rawdata_transformation import RawDataTransformation
+from src.components.data_ingestion import DataIngestion
+import pandas as pd
 
 
 
@@ -27,8 +29,21 @@ class TrainingPipeline:
             
             raw_data_transformation = RawDataTransformation(config=self.rawdata_transformation_config,
                                                             rawdata_validation_artifacts=raw_data_validation_artifacts)
-            
             raw_data_transformation_artifacts = raw_data_transformation.initialize_data_transformation_process()
+            
+            data_ingestion = DataIngestion(input_dataset_path=raw_data_transformation_artifacts.final_file_path)
+            data_ingestion_artifacts = data_ingestion.initialize_data_ingestion_process()
+            
+            # data_ingestion_artifacts.input_dataframe
+            
+            
+            # Generate EDA and Data Drift HTML reports
+            with open('./static/eda.html', 'w') as f:
+                f.write("<h1>EDA Report</h1><p>Sample EDA content here.</p>")
+                
+            with open('./static/datadrift.html', 'w') as f:
+                f.write("<h1>Data Drift Report</h1><p>Sample Data Drift content here.</p>")
+                    
             
             logger.info(msg="---------------Completed Training Pipeline---------------")
         except Exception as e:

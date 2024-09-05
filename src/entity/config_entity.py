@@ -13,7 +13,11 @@ class BaseArtifactConfig:
     timestamp: str = TIMESTAMP
     artifact_base_dir = Path(ARTIFACT_FOLDER_NAME)
     artifact_dir:Path = artifact_base_dir / timestamp
-    
+
+@dataclass    
+class LogValidationConfig:
+    log_folder_path:Path = Path(LOG_FOLDER_NAME)
+    log_file_path:Path = log_folder_path / LOG_FILE_NAME
 
 @dataclass
 class TrainingRawDataValidationConfig:
@@ -52,4 +56,6 @@ class PredictionRawDataTransformationConfig(PredictionRawDataValidationConfig):
     new_output_column_name = NEW_OUTPUT_COLUMN_NAME
     merge_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,FINAL_PREDICTION_FILE_FOLDER_NAME,FINAL_FILE_NAME))
         
-    
+@dataclass
+class AppConfig:
+    training_folder_path  = Path(r"C:\Users\RAVEEN\Downloads\testing_data\batch3")     
