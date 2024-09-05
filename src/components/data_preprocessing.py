@@ -37,7 +37,7 @@ class Preprocessor:
             return df
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
-            logger.error(msg=f"Dropped columns :: Status: Success :: dropped_columns:{dropped_columns} :: Error:{error_message}")
+            logger.error(msg=f"Dropped columns :: Status: Failed :: dropped_columns:{dropped_columns} :: Error:{error_message}")
             raise error_message
         
     def drop_duplicate_rows(self, df: pd.DataFrame) -> pd.DataFrame:
