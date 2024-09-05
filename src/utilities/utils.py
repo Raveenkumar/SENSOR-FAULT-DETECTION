@@ -1,7 +1,7 @@
 from box import ConfigBox
 from pathlib import Path
 import json
-import shutil
+import shutil,dill
 import os,sys
 import pandas as pd
 from openpyxl import load_workbook
@@ -237,5 +237,57 @@ def delete_artifact_folder() -> None:
         error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
         logger.error(f"delete_artifact_folder  ::  Status:Failed :: Error:{error_message}")
         raise error_message
+
+def save_obj(file_path:Path,obj: object):
+    """save_obj Used: save the model to dill objects
+
+    Args:
+        file_path (Path): file path for save the object
+        obj (object): model object
+
+    Raises:
+        SensorFaultException: Custom Exception
+    """
+    try:
+        dir_name = os.path.dirname(file_path)
+        os.makedirs(dir_name,exist_ok=True)
+        with open(file_path,'wb') as file_obj:
+            dill.dump(obj,file=file_obj) 
+        logger.info(msg=f'object saved :: Status: Success :: path: {file_path}')    
+        
+    except Exception as e:
+        error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(f"save_obj  ::  Status:Failed :: Error:{error_message}")
+        raise error_message
+    
+def load_obj(file_path:Path)-> object:
+    """load_obj :Used for load dill object
+
+    Args:
+        file_path (Path): file path of object
+
+    Raises:
+        SensorFaultException: Custom Exception
+
+    Returns:
+        object: dill object
+    """
+    try:
+        
+        if os.path.exists(file_path):
+            with open(file_path,mode='rb') as file_obj:
+                result = dill.load(file=file_obj)
+            logger.info(msg=f'object loaded :: Status: Success :: path: {file_path}') 
+               
+            return result     
+        else:
+            e = Exception(f'object file path not exist path: {file_path}')    
+            logger.info(msg=e)
+            raise e
+    
+    except Exception as e:
+        error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(f"load object   ::  Status:Failed :: Error:{error_message}")
+        raise error_message    
     
     

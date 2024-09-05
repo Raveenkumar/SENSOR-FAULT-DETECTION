@@ -18,7 +18,12 @@ class RawDataTransformationArtifacts:
     final_file_path:Path    
 
 @dataclass
-class DataIngestionArtifact:
+class DataIngestionArtifacts:
     input_dataframe:DataFrame
+    
+@dataclass
+class PreprocessorArtifacts:
+    preprocessed_data:DataFrame
+    preprocessed_object_path:Path   
    
 

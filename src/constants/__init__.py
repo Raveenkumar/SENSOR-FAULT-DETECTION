@@ -4,11 +4,13 @@ from datetime import datetime
 
 
 # general constants
-ARTIFACT_FOLDER_NAME = "artifacts"
+ARTIFACT_FOLDER_NAME:str = "artifacts"
+DATA_FOLDER_NAME:str = 'data'
+MODEL_DATA_FOLDER_NAME: str = "model_data"
 
 #logs constants
-LOG_FOLDER_NAME = "logs"
-LOG_FILE_NAME = f"{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.log"
+LOG_FOLDER_NAME:str = "logs"
+LOG_FILE_NAME:str = f"{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.log"
 
 # validation constants
 REGEX_PATTERN :str = "wafer_(0[1-9]|[12][0-9]|3[01])(0[1-9]|1[0-2])\d{4}_(0[0-9]|1[0-9]|2[0-3])([0-5][0-9]){2}\.csv"   # type: ignore
@@ -33,10 +35,21 @@ FINAL_TRAINING_FILE_FOLDER_NAME: str = "training_file_data"
 FINAL_PREDICTION_FILE_FOLDER_NAME: str = "prediction_file_data"
 FINAL_FILE_NAME: str = "final_file.csv"
 
+# preprocessing_constants
+LOWER_PERCENTILE:float = 0.05
+UPPER_PERCENTILE:float = 0.95
+IQR_MULTIPLIER:float = 1.5
+EXPERIMENT_FOLDER_NAME:str = "experiment_model_data"
+STABLE_FOLDER_NAME:str = "stable_model_data"
+PREPROCESSOR_FOLDER_NAME:str = "preprocessor"
+PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.dill"
+
+
+
 
 #s3 constants
-BUCKET_NAME = 'wafersensorsdata'
+BUCKET_NAME:str = 'wafersensorsdata'
 
 #api_constants
-APP_HOST = "0.0.0.0"
-APP_PORT = 8080
+APP_HOST:str = "0.0.0.0"
+APP_PORT:int = 8080

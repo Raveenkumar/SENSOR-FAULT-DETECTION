@@ -4,7 +4,7 @@ from pandas import DataFrame
 from src.logger import logger
 from src.exception import SensorFaultException
 from src.utilities.utils import read_csv_file
-from src.entity.artifact_entity import DataIngestionArtifact
+from src.entity.artifact_entity import DataIngestionArtifacts
 
 
 class DataIngestion:
@@ -32,7 +32,7 @@ class DataIngestion:
             raise error_message
         
         
-    def initialize_data_ingestion_process(self) -> DataIngestionArtifact:
+    def initialize_data_ingestion_process(self) -> DataIngestionArtifacts:
         """initialize_data_ingestion_process :used for start the data ingestion process
 
         Raises:
@@ -44,7 +44,7 @@ class DataIngestion:
         try:
             logger.info("started the raw data ingestion process!")
             input_dataframe = self.get_data()
-            data_ingestion_artifact = DataIngestionArtifact(input_dataframe=input_dataframe)
+            data_ingestion_artifact = DataIngestionArtifacts(input_dataframe=input_dataframe)
             logger.info(f"started the raw data ingestion Ended!")
             return data_ingestion_artifact
         except Exception as e:
