@@ -188,3 +188,4 @@ notebook/training_file_data/
 # change need
 notebook/
 src/pipeline/train_models.py
+cluster_data.csv

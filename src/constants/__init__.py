@@ -44,6 +44,9 @@ STABLE_FOLDER_NAME:str = "stable_model_data"
 PREPROCESSOR_FOLDER_NAME:str = "preprocessor"
 PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.dill"
 
+# cluster constants
+CLUSTER_COLUMN_NAME:str = "Cluster"
+
 
 
 

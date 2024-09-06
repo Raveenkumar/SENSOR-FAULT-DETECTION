@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import os
+from typing import Optional
 from datetime import datetime
 from src.constants import *
 from pathlib import Path
@@ -25,5 +26,10 @@ class DataIngestionArtifacts:
 class PreprocessorArtifacts:
     preprocessed_data:DataFrame
     preprocessed_object_path:Path   
+    
+@dataclass
+class ClusterArtifact:
+    final_file : DataFrame    
+    silhouette_score_ : Optional[float]
    
 
