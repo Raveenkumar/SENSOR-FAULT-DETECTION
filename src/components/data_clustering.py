@@ -9,6 +9,7 @@ from src.logger import logger
 from src.entity.config_entity import ClusterConfig
 from src.entity.artifact_entity import ClusterArtifact
 from sklearn.metrics import silhouette_score
+from src.utilities.utils import save_obj,create_folder_using_file_path
 
 class Clusters:
     def __init__(self,config:ClusterConfig,input_file:pd.DataFrame,target_feature_name:str) -> None:
@@ -45,7 +46,7 @@ class Clusters:
             logger.error(msg=f"find_optimal_clusters :: Status:Failed ::  :: Error:{error_message}")
             raise error_message
     
-    def find_cluster_labels(self, X:pd.DataFrame, optimal_clusters) -> ndarray[Any, Any]:
+    def find_cluster_labels(self, X:pd.DataFrame, optimal_clusters) :
         """find_cluster_labels:Used for find cluster labels for dataset
 
         Args:
@@ -62,8 +63,19 @@ class Clusters:
             kmeans = KMeans(n_clusters=optimal_clusters, random_state=42)
             cluster_labels = kmeans.fit_predict(X)
             
+            # storing the preprocessing object
+            if os.path.exists(self.config.stable_cluster_object_path):
+                final_cluster_object_path = self.config.experiment_cluster_object_path
+                create_folder_using_file_path(file_path=final_cluster_object_path)
+                save_obj(file_path=final_cluster_object_path,obj=kmeans)
+            
+            else:
+                final_cluster_object_path = self.config.stable_cluster_object_path
+                create_folder_using_file_path(file_path=final_cluster_object_path)
+                save_obj(file_path=final_cluster_object_path,obj=kmeans)
+            
             logger.info(f"n_clusters :: Status:Success ")
-            return cluster_labels
+            return cluster_labels, final_cluster_object_path
         
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -79,16 +91,17 @@ class Clusters:
             
             optimal_clusters = self.find_optimal_clusters(X)
             
-            cluster_labels = self.find_cluster_labels(X, optimal_clusters=optimal_clusters)
+            cluster_labels,cluster_obj_path = self.find_cluster_labels(X, optimal_clusters=optimal_clusters)
             
             final_file[self.config.cluster_column_name] = cluster_labels
             
             silhouette_score_ = silhouette_score(X,cluster_labels)
             
             result = ClusterArtifact(final_file=final_file,
+                                     cluster_object_path = cluster_obj_path,
                                      silhouette_score_ = silhouette_score_) # type: ignore
             
-            logger.info(f'Optimal clusters:{optimal_clusters} :: silhouette_score:{silhouette_score_}')
+            logger.info(f'Optimal clusters:{optimal_clusters} :: silhouette_score:{silhouette_score_} :: cluster_object_path:{cluster_obj_path}')
             logger.info(msg="Ended initialize_clusters Process!")
             return result
         

@@ -63,12 +63,31 @@ class PreprocessorConfig:
     lower_percentile = LOWER_PERCENTILE
     upper_percentile = UPPER_PERCENTILE
     iqr_multiplier = IQR_MULTIPLIER
-    experiment_preprocessor_object_path = Path(os.path.join(DATA_FOLDER_NAME,MODEL_DATA_FOLDER_NAME,EXPERIMENT_FOLDER_NAME,PREPROCESSOR_FOLDER_NAME,PREPROCESSOR_OBJECT_NAME))
-    stable_preprocessor_object_path = Path(os.path.join(DATA_FOLDER_NAME,MODEL_DATA_FOLDER_NAME,STABLE_FOLDER_NAME,PREPROCESSOR_FOLDER_NAME,PREPROCESSOR_OBJECT_NAME))
+    experiment_preprocessor_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            EXPERIMENT_FOLDER_NAME,
+                                                            PREPROCESSOR_FOLDER_NAME,
+                                                            PREPROCESSOR_OBJECT_NAME))
+    stable_preprocessor_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                        MODEL_DATA_FOLDER_NAME,
+                                                        STABLE_FOLDER_NAME,
+                                                        PREPROCESSOR_FOLDER_NAME,
+                                                        PREPROCESSOR_OBJECT_NAME))
 
 @dataclass
 class ClusterConfig:
     cluster_column_name = CLUSTER_COLUMN_NAME
+    experiment_cluster_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            EXPERIMENT_FOLDER_NAME,
+                                                            CLUSTER_FOLDER_NAME,
+                                                            CLUSTER_OBJECT_NAME))
+    
+    stable_cluster_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                        MODEL_DATA_FOLDER_NAME,
+                                                        STABLE_FOLDER_NAME,
+                                                        CLUSTER_FOLDER_NAME,
+                                                        CLUSTER_OBJECT_NAME))
 
 
 @dataclass

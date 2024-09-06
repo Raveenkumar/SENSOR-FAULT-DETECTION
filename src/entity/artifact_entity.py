@@ -29,7 +29,8 @@ class PreprocessorArtifacts:
     
 @dataclass
 class ClusterArtifact:
-    final_file : DataFrame    
+    final_file : DataFrame
+    cluster_object_path:Path     
     silhouette_score_ : Optional[float]
    
 

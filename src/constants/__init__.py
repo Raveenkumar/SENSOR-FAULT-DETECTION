@@ -46,7 +46,8 @@ PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.dill"
 
 # cluster constants
 CLUSTER_COLUMN_NAME:str = "Cluster"
-
+CLUSTER_FOLDER_NAME:str = "cluster"
+CLUSTER_OBJECT_NAME:str = "cluster_obj.dill"
 
 
 
