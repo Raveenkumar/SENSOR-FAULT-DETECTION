@@ -8,7 +8,7 @@ from src.logger import logger
 from src.entity.config_entity import PreprocessorConfig
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
-from src.utilities.utils import create_folder_using_file_path,save_obj
+from src.utilities.utils import create_folder_using_file_path,save_obj,find_final_path
 from src.entity.artifact_entity import PreprocessorArtifacts
 
 
@@ -295,15 +295,9 @@ class Preprocessor:
             preprocessed_data = preprocessing_pipeline.fit_transform(self.input_input_file)
             
             # storing the preprocessing object
-            if os.path.exists(self.config.stable_preprocessor_object_path):
-                final_preprocessor_object_path = self.config.experiment_preprocessor_object_path
-                create_folder_using_file_path(file_path=final_preprocessor_object_path)
-                save_obj(file_path=final_preprocessor_object_path,obj=preprocessing_pipeline)
-            
-            else:
-                final_preprocessor_object_path = self.config.stable_preprocessor_object_path
-                create_folder_using_file_path(file_path=final_preprocessor_object_path)
-                save_obj(file_path=final_preprocessor_object_path,obj=preprocessing_pipeline)   
+            final_preprocessor_object_path = find_final_path(self.config.experiment_preprocessor_object_path,self.config.stable_preprocessor_object_path)
+            create_folder_using_file_path(file_path=final_preprocessor_object_path)
+            save_obj(file_path=final_preprocessor_object_path,obj=preprocessing_pipeline)   
                 
             
             result = PreprocessorArtifacts(preprocessed_data=preprocessed_data,preprocessed_object_path=final_preprocessor_object_path)   # type: ignore

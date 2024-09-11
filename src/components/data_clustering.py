@@ -7,9 +7,9 @@ from sklearn.cluster import KMeans
 from src.exception import SensorFaultException
 from src.logger import logger
 from src.entity.config_entity import ClusterConfig
-from src.entity.artifact_entity import ClusterArtifact
+from src.entity.artifact_entity import ClusterArtifacts
 from sklearn.metrics import silhouette_score
-from src.utilities.utils import save_obj,create_folder_using_file_path
+from src.utilities.utils import save_obj,create_folder_using_file_path,find_final_path
 
 class Clusters:
     def __init__(self,config:ClusterConfig,input_file:pd.DataFrame,target_feature_name:str) -> None:
@@ -62,17 +62,9 @@ class Clusters:
         try:
             kmeans = KMeans(n_clusters=optimal_clusters, random_state=42)
             cluster_labels = kmeans.fit_predict(X)
-            
-            # storing the preprocessing object
-            if os.path.exists(self.config.stable_cluster_object_path):
-                final_cluster_object_path = self.config.experiment_cluster_object_path
-                create_folder_using_file_path(file_path=final_cluster_object_path)
-                save_obj(file_path=final_cluster_object_path,obj=kmeans)
-            
-            else:
-                final_cluster_object_path = self.config.stable_cluster_object_path
-                create_folder_using_file_path(file_path=final_cluster_object_path)
-                save_obj(file_path=final_cluster_object_path,obj=kmeans)
+            final_cluster_object_path = find_final_path(self.config.experiment_cluster_object_path,self.config.stable_cluster_object_path)
+            create_folder_using_file_path(file_path=final_cluster_object_path)
+            save_obj(file_path=final_cluster_object_path,obj=kmeans)
             
             logger.info(f"n_clusters :: Status:Success ")
             return cluster_labels, final_cluster_object_path
@@ -83,7 +75,7 @@ class Clusters:
             raise error_message
         
     
-    def initialize_clusters(self) -> ClusterArtifact:
+    def initialize_clusters(self) -> ClusterArtifacts:
         try:
             final_file = self.input_file.copy()
             logger.info("Started initialize_clusters Process!")
@@ -97,7 +89,7 @@ class Clusters:
             
             silhouette_score_ = silhouette_score(X,cluster_labels)
             
-            result = ClusterArtifact(final_file=final_file,
+            result = ClusterArtifacts(final_file=final_file,
                                      cluster_object_path = cluster_obj_path,
                                      silhouette_score_ = silhouette_score_) # type: ignore
             

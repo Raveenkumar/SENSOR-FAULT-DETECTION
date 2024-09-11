@@ -41,7 +41,7 @@ UPPER_PERCENTILE:float = 0.95
 IQR_MULTIPLIER:float = 1.5
 EXPERIMENT_FOLDER_NAME:str = "experiment_model_data"
 STABLE_FOLDER_NAME:str = "stable_model_data"
-PREPROCESSOR_FOLDER_NAME:str = "preprocessor"
+PREPROCESSOR_FOLDER_NAME:str = "preprocessor_stage_one"
 PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.dill"
 
 # cluster constants
@@ -49,7 +49,60 @@ CLUSTER_COLUMN_NAME:str = "Cluster"
 CLUSTER_FOLDER_NAME:str = "cluster"
 CLUSTER_OBJECT_NAME:str = "cluster_obj.dill"
 
+## model tuner constants
+# kfold n splits
+KFOLD_N_SPLITS:int = 5
 
+#pca n_components
+PCA_N_COMPONENTS: int | float | str | None = 0.99
+
+# model hyperparameters
+GAUSSIANNB_PARAM_GRID = {
+        'var_smoothing': [1e-9, 1e-8, 1e-7, 1e-6, 1e-5]  # Tuning var_smoothing for GaussianNB
+    }
+
+SVC_PARAM_GRID: dict = {
+    'C': [0.001, 0.01, 0.1, 1, 10, 100],
+    'kernel': ['rbf', 'linear', 'poly'],
+    'gamma': [0.0001, 0.001, 0.01, 0.1, 'scale', 'auto']
+    }
+
+RANDOM_FOREST_PARAM_GRID: dict = {
+    'n_estimators': [100, 200, 300, 400, 500],
+    'max_depth': [10, 20, 30, None],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'max_features': ['sqrt', 'log2'],
+    'bootstrap': [True, False],
+    'criterion': ['gini', 'entropy']
+}
+
+XGB_CLASSIFIER_PARAM_GRID: dict= {
+    'n_estimators': [50, 100, 200, 500],
+    'learning_rate': [0.01, 0.05, 0.1, 0.2],
+    'max_depth': [3, 4, 5, 6, 8, 10],
+    'min_child_weight': [1, 3, 5, 7],
+    'gamma': [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+    'subsample': [0.5, 0.6, 0.7, 0.8, 0.9, 1],
+    'colsample_bytree': [0.5, 0.6, 0.7, 0.8, 0.9, 1],
+    'reg_alpha': [0, 0.1, 0.5, 1, 5, 10],
+    'reg_lambda': [0, 0.1, 0.5, 1, 5, 10]
+}
+# model trainer and tuner constants
+AUC_SCORE_THRESHOLD_VALUE :float = 0.95
+MODEL_OBJS_FOLDER_NAME:str ="model_objs"
+BEST_MODEL_OBJ_FOLDER_NAME:str ="bestmodel_obj"
+PREPROCESSOR_FOLDER_STAGE_TWO_NAME:str = "preprocessor_stage_two"
+STANDARD_SCALAR_OBJECT_NAME:str = 'standard_scalar.dill'
+HANDLE_IMBALANCE_SMOTE_OBJECT_NAME : str = "handle_imbalance_smote.dill"
+PCA_OBJECT_NAME: str = "pca.dill"
+EXCEL_FILES_FOLDER_NAME : str = "excel_files"
+JSON_FILES_FOLDER_NAME : str = "json_files"
+ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME: str = "models_result.xlsx"
+BEST_MODEL_RESULT_DATA_EXCEL_FILE_NAME: str = "best_model_result.xlsx"
+ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME: str = "models_result.json"
+BEST_MODEL_RESULT_DATA_JSON_FILE_NAME: str = "best_model_result.json"
+EXCEL_AND_JSON_FILES_FOLDER_NAME: str = "excel_and_json_files"
 
 #s3 constants
 BUCKET_NAME:str = 'wafersensorsdata'

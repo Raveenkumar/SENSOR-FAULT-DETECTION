@@ -1,10 +1,14 @@
 import sys,os,re,shutil
 from typing import Union,Literal
+import pandas as pd
+from pathlib import Path
 from src.entity.config_entity import (TrainingRawDataValidationConfig,
                                       TrainingRawDataTransformationConfig,
                                       PreprocessorConfig,
-                                      ClusterConfig)
-from pathlib import Path
+                                      ClusterConfig,
+                                      ModelTunerConfig,
+                                      ModelTrainerConfig)
+
 from src.utilities.utils import read_json,read_csv_file 
 from src.logger import logger
 from src.exception import SensorFaultException
@@ -13,7 +17,8 @@ from src.components.rawdata_transformation import RawDataTransformation
 from src.components.data_ingestion import DataIngestion
 from src.components.data_preprocessing import Preprocessor
 from src.components.data_clustering import Clusters
-import pandas as pd
+from src.components.model_trainer import ModelTrainer
+
 
 
 
@@ -24,6 +29,8 @@ class TrainingPipeline:
         self.rawdata_transformation_config = TrainingRawDataTransformationConfig()
         self.preprocessor_config = PreprocessorConfig()
         self.cluster_config = ClusterConfig()
+        self.model_tuner_config = ModelTunerConfig()
+        self.model_trainer_config = ModelTrainerConfig()
        
     
     def initialize_pipeline(self):
@@ -49,7 +56,15 @@ class TrainingPipeline:
                                 input_file=input_file,
                                 target_feature_name=self.preprocessor_config.target_feature)
             cluster_artifacts = clusters.initialize_clusters()
-            cluster_artifacts.final_file.to_csv('cluster_data.csv',index=False)
+            
+            input_file = cluster_artifacts.final_file
+            # input_file = pd.read_csv(self.files_path)
+            
+            model_trainer = ModelTrainer(config=self.model_trainer_config,
+                                         input_file=input_file,
+                                         modeltunerconfig=self.model_tuner_config)
+            
+            model_trainer.initialize_model_trainer()
             logger.info(msg="---------------Completed Training Pipeline---------------")
         except Exception as e:
             logger.error(msg=SensorFaultException(error_message=e,error_detail=sys))

@@ -88,7 +88,114 @@ class ClusterConfig:
                                                         STABLE_FOLDER_NAME,
                                                         CLUSTER_FOLDER_NAME,
                                                         CLUSTER_OBJECT_NAME))
+    
 
+@dataclass
+class ModelTunerConfig:
+    kfold_n_splits = KFOLD_N_SPLITS
+    pca_n_components = PCA_N_COMPONENTS
+    gaussiannb_param_grid = GAUSSIANNB_PARAM_GRID
+    svc_param_grid = SVC_PARAM_GRID
+    randomforest_param_grid = RANDOM_FOREST_PARAM_GRID 
+    xgbclassifier_param_grid = XGB_CLASSIFIER_PARAM_GRID
+    auc_score_threshold_value = AUC_SCORE_THRESHOLD_VALUE
+
+
+@dataclass
+class ModelTrainerConfig:
+    experiment_all_model_objects_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            EXPERIMENT_FOLDER_NAME,
+                                                            MODEL_OBJS_FOLDER_NAME))
+    
+    experiment_best_model_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            EXPERIMENT_FOLDER_NAME,
+                                                            BEST_MODEL_OBJ_FOLDER_NAME))
+    
+    stable_all_model_objects_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                        MODEL_DATA_FOLDER_NAME,
+                                                        STABLE_FOLDER_NAME,
+                                                        MODEL_OBJS_FOLDER_NAME))
+
+    stable_best_model_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                        MODEL_DATA_FOLDER_NAME,
+                                                        STABLE_FOLDER_NAME,
+                                                        BEST_MODEL_OBJ_FOLDER_NAME))
+    
+    excel_and_json_files_folder_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                        MODEL_DATA_FOLDER_NAME,
+                                                        EXCEL_AND_JSON_FILES_FOLDER_NAME))
+    
+    all_model_results_excel_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                        MODEL_DATA_FOLDER_NAME,
+                                                        EXCEL_AND_JSON_FILES_FOLDER_NAME,
+                                                        EXCEL_FILES_FOLDER_NAME,
+                                                        ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME))
+    
+    best_model_results_excel_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                    MODEL_DATA_FOLDER_NAME,
+                                                    EXCEL_AND_JSON_FILES_FOLDER_NAME,
+                                                    EXCEL_FILES_FOLDER_NAME,
+                                                    BEST_MODEL_RESULT_DATA_EXCEL_FILE_NAME))
+    
+    
+    all_model_results_json_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                        MODEL_DATA_FOLDER_NAME,
+                                                        EXCEL_AND_JSON_FILES_FOLDER_NAME,
+                                                        JSON_FILES_FOLDER_NAME,
+                                                        ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME))
+    
+   
+    
+    best_model_results_json_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                        MODEL_DATA_FOLDER_NAME,
+                                                        EXCEL_AND_JSON_FILES_FOLDER_NAME,
+                                                        JSON_FILES_FOLDER_NAME,
+                                                        BEST_MODEL_RESULT_DATA_JSON_FILE_NAME))
+    
+    experiment_standard_scalar_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            EXPERIMENT_FOLDER_NAME,
+                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+                                                            STANDARD_SCALAR_OBJECT_NAME))
+                                           
+    experiment_smote_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            EXPERIMENT_FOLDER_NAME,
+                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+                                                            HANDLE_IMBALANCE_SMOTE_OBJECT_NAME))
+                    
+    experiment_pca_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            EXPERIMENT_FOLDER_NAME,
+                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+                                                            PCA_OBJECT_NAME))
+    
+    
+    stable_standard_scalar_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            STABLE_FOLDER_NAME,
+                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+                                                            STANDARD_SCALAR_OBJECT_NAME))
+                                           
+    stable_smote_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            STABLE_FOLDER_NAME,
+                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+                                                            HANDLE_IMBALANCE_SMOTE_OBJECT_NAME))
+                    
+    stable_pca_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                            MODEL_DATA_FOLDER_NAME,
+                                                            STABLE_FOLDER_NAME,
+                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+                                                            PCA_OBJECT_NAME))
+    
+    
+    all_model_result_json_file_name = ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME
+    all_model_result_excel_file_name = ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME
+    best_model_json_file_name = BEST_MODEL_RESULT_DATA_JSON_FILE_NAME
+    best_model_excel_file_name = BEST_MODEL_RESULT_DATA_EXCEL_FILE_NAME
 
 @dataclass
 class AppConfig:

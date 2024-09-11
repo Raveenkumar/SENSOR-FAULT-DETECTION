@@ -68,8 +68,8 @@ class RawDataTransformation:
         try:
             if self.config.old_output_column_name in merge_df.columns.to_list():
                 target_variable = self.config.old_output_column_name
-                merge_df[target_variable] = np.where(merge_df[target_variable]==-1,1,0)
-                logger.info(msg=f"reformat_target_variable :: Status:Success :: Target_variable:{target_variable}  reformated data:[-1,1]->[1,0]")
+                merge_df[target_variable] = merge_df[target_variable].map({1:1,-1:0})
+                logger.info(msg=f"reformat_target_variable :: Status:Success :: Target_variable:{target_variable}  reformated data:[-1,1]->[0,1]")
             return merge_df
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)

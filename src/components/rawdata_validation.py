@@ -176,12 +176,12 @@ class RawDataValidation:
                     
             if len(mismatch_columns_data)==0: 
                 status = "Passed"
-                logger.info(msg=f"COLUMN DATA MISSING VALIDATION :: Status:{status} :: File:{file_name}")
-                append_log_to_excel(filename=file_name,status=status, status_reason="COLUMN DATA MISSING VALIDATION",remark="COLUMN DATA WHOLE MISSING VALIDATION COMPLETED",excel_filename=self.validation_report_file_path)
+                logger.info(msg=f"COLUMNDATA_WHOLE_MISSING_VALIDATION :: Status:{status} :: File:{file_name}")
+                append_log_to_excel(filename=file_name,status=status, status_reason="COLUMNDATA_WHOLE_MISSING_VALIDATION",remark="COLUMN DATA WHOLE MISSING VALIDATION COMPLETED",excel_filename=self.validation_report_file_path)
             else:
                 status = "Failed"
-                logger.info(msg=f"COLUMN DATA MISSING VALIDATION :: Status:Failed :: File:{file_name} :: Mismatch column list:{mismatch_columns_data}")
-                append_log_to_excel(filename=file_name ,status=status, status_reason="COLUMN DATA MISSING VALIDATION",remark=f"COLUMN DATA WHOLE MISSING VALIDATION FAILED, MISMATCH COLUMN LIST:{mismatch_columns_data}",excel_filename=self.validation_report_file_path)
+                logger.info(msg=f"COLUMNDATA_WHOLE_MISSING_VALIDATION :: Status:Failed :: File:{file_name} :: Mismatch column list:{mismatch_columns_data}")
+                append_log_to_excel(filename=file_name ,status=status, status_reason="COLUMNDATA_WHOLE_MISSING_VALIDATION",remark=f"COLUMN DATA WHOLE MISSING VALIDATION FAILED, MISMATCH COLUMN LIST:{mismatch_columns_data}",excel_filename=self.validation_report_file_path)
             return status
         
         except Exception as e:

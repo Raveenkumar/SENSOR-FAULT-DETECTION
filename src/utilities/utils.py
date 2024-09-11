@@ -3,13 +3,18 @@ from pathlib import Path
 import json
 import shutil,dill
 import os,sys
+from typing import Any
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
 from datetime import datetime
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.base import BaseEstimator
 from src.logger import logger
 from src.exception import SensorFaultException
-from src.entity.config_entity import BaseArtifactConfig
+from src.entity.config_entity import BaseArtifactConfig,ModelTrainerConfig
+from src.entity.artifact_entity import ModelTunerArtifacts
 
 
 def create_folder_using_folder_path(folder_path:Path):
@@ -40,7 +45,7 @@ def create_folder_using_file_path(file_path:Path):
     """
     try:
         folder_name,_ = os.path.split(file_path)
-        os.makedirs(folder_name)
+        os.makedirs(folder_name,exist_ok=True)
         logger.info(f"create folder using file path :: Status:Successful :: folder_path:{file_path}")
     except Exception as e:
         error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
@@ -61,13 +66,25 @@ def read_json(file_path:Path) -> ConfigBox:
         if os.path.exists(file_path):
             with open(file_path,mode='r') as file:
                 json_data = json.load(file)
-            logger.info(f"read json data : file_path: {file_path} : Status: Successful")    
+            logger.info(f"read json data :: file_path:{file_path} :: Status:Successful")    
         return ConfigBox(json_data)    
     
     except Exception as e:
         error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
         logger.error(f"read json data :: file_path:{file_path} :: Status:Failed :: Error:{error_message}")
         raise error_message  
+
+def save_json(file_path:Path, file_obj:object):
+    try:
+        #check file path exist or not
+        with open(file_path, 'w') as json_file:
+            json.dump(file_obj, json_file, indent=4)
+        logger.info(f"save dict data into json :: file_path:{file_path} :: Status:Successful")    
+       
+    except Exception as e:
+        error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(f" save dict data into json :: file_path:{file_path} :: Status:Failed :: Error:{error_message}")
+        raise error_message     
 
 def read_csv_file(file_path:Path) -> pd.DataFrame:
     """read_csv_file :: Used for read the csv file using pandas
@@ -291,3 +308,185 @@ def load_obj(file_path:Path)-> object:
         raise error_message    
     
     
+def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFrame,y_train:pd.DataFrame,y_test:pd.DataFrame)-> tuple[BaseEstimator,dict[str, Any]]:
+    """model_result :Used for store model result data in dict format
+
+    Args:
+        model (RandomizedSearchCV): RandomizedSearch CV object
+        X_train (DataFrame): X train
+        X_test (DataFrame): X_test
+        y_train (DataFrame): y_train
+        y_test (DataFrame): y_test
+
+    Raises:
+        error_message: Custom Exception
+
+    Returns:
+       tuple[RandomizedSearchCV,dict[str, Any]]: model,results
+    """
+    try: 
+        y_pred = model.predict(X_test)  
+        
+        result_dict = {
+            'best_param': model.best_params_,
+            'training_score': model.score(X_train, y_train),
+            'test_score': model.score(X_test, y_test), 
+            'accuracy': accuracy_score(y_test, y_pred),
+            'recall': recall_score(y_test, y_pred, zero_division=0),
+            'precision': precision_score(y_test, y_pred, zero_division=0),
+            'f1_score': f1_score(y_test, y_pred, zero_division=0),
+            'auc_score': roc_auc_score(y_test, y_pred)
+        }
+        
+        logger.info(f"model_result: {result_dict}")
+        
+        return model.best_estimator_, result_dict
+    
+    except Exception as e:
+        error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+        logger.error(msg=f"model_result :: Status:Failed :: Error:{error_message}")
+        raise error_message
+
+def save_model_result_excel(df:pd.DataFrame, excel_file_path) -> None:
+    """save_model_result_excel :Used for store the model results in excel file 
+
+    Args:
+        model_result_data (dict): models results data
+        excel_file_path (_type_): excel file path for store the excel
+
+    Raises:
+        error_message: Custom Exception
+    """
+    try:
+        df.to_excel(excel_file_path, index=False, engine='openpyxl')
+        # Style the Excel file
+        style_excel(excel_file_path)
+        logger.info("save_model_result_excel :: Status:created-result data added")
+
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"save_model_result_excel :: Status:Failed :: Error:{error_message}")
+            raise error_message
+
+def save_models_data(experiment_all_model_objects_path:Path,
+                experiment_best_model_object_path:Path,
+                stable_all_model_objects_path:Path,
+                stable_best_model_object_path:Path,
+                model_tuner_artifacts:ModelTunerArtifacts):
+    """save_models_data :Used for save the model results & model objects
+
+    Args:
+        experiment_all_model_objects_path (Path): path of experiment files of store all models data
+        experiment_best_model_object_path (Path): path of experiment files of store best model data
+        stable_all_model_objects_path (Path): path of stable files of store all models data
+        stable_best_model_object_path (Path): path of stable files of store best mode data
+        model_tuner_artifacts (ModelTunerArtifacts): contains  all models results and best model results
+
+    Raises:
+        error_message: Custom Exception
+    """
+    try:
+        create_folder_using_folder_path(experiment_all_model_objects_path)
+        create_folder_using_folder_path(experiment_best_model_object_path)
+        create_folder_using_folder_path(stable_all_model_objects_path)
+        create_folder_using_folder_path(stable_best_model_object_path)
+        
+        all_models_data = model_tuner_artifacts.all_models_data
+        best_model_data = model_tuner_artifacts.best_model_data
+
+        
+        for model_name,model_obj in all_models_data[0].items():
+            file_name = model_name+".dill"
+            exp_all_model_file_path = experiment_all_model_objects_path / file_name
+            stable_all_model_file_path = stable_all_model_objects_path / file_name
+            
+            final_file_path = find_final_path(experiment_file_path=exp_all_model_file_path,stable_file_path=stable_all_model_file_path)
+            #save model object
+            save_obj(final_file_path,model_obj)
+            
+        final_path = os.path.dirname(final_file_path)
+        json_file_path = Path(os.path.join(final_path,ModelTrainerConfig.all_model_result_json_file_name)) 
+        save_json(json_file_path,all_models_data[1])   
+            
+        
+        file_name = "best_model.dill"
+        exp_best_model_path = experiment_best_model_object_path / file_name
+        stable_best_file_path = stable_best_model_object_path / file_name
+        
+        final_file_path = find_final_path(experiment_file_path=exp_best_model_path,stable_file_path=stable_best_file_path)
+        #save model object
+        # save_obj(final_file_path,model_obj)
+        best_model_obj = best_model_data[0]
+        best_model_results = best_model_data[1]
+        
+        #save model object
+        save_obj(final_file_path,best_model_obj)
+        final_path = os.path.dirname(final_file_path)
+        json_file_path = Path(os.path.join(final_path,ModelTrainerConfig.best_model_json_file_name)) 
+        save_json(json_file_path,best_model_results)   
+ 
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"save_model_result_excel :: Status:Failed :: Error:{error_message}")
+            raise error_message 
+
+def find_final_path(experiment_file_path:Path,stable_file_path:Path) -> Path:
+    """find_final_path :Used find the folder path weather we store in experiments or stable's data
+
+    Args:
+        experiment_file_path (Path): Folder path
+        stable_file_path (Path): Folder path
+
+    Raises:
+        error_message: Custom Exception
+
+    Returns:
+        Path: Final path
+    """
+    try:
+        if not os.path.exists(stable_file_path):
+            return stable_file_path 
+        else:    
+            return experiment_file_path
+                    
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"save_object_to_experiment_and_stable :: Status:Failed :: Error:{error_message}")
+            raise error_message
+                        
+                        
+def proper_conversion_for_excel_file(result_dict:dict) -> pd.DataFrame:
+    """proper_conversion_for_excel_file :Used for change data into proper for format for excel file
+
+    Args:
+        result_dict (dict): result dict
+
+    Raises:
+        error_message: Custom Exception
+
+    Returns:
+        pd.DataFrame: proper data in dataframe format
+    """
+    try:
+            data = []
+            for cluster_name, models in result_dict.items():
+                for model_name, metrics in models.items():
+                    # Add cluster name, model name, and metrics to the list
+                    data.append({
+                        'cluster': cluster_name,
+                        'model_name': model_name,
+                        **metrics  # Unpack the metrics dictionary into separate columns
+                    })
+
+            # Convert the collected data into a DataFrame
+            df = pd.DataFrame(data) 
+            logger.info(msg=f"proper_conversion_for_excel_file :: Status:Success :: result_dict: {result_dict}")
+            
+            return df
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"proper_conversion_for_excel_file :: Status:Failed :: Error:{error_message}")
+            raise error_message                              
+        
+        
+        
