@@ -1,6 +1,7 @@
 from box import ConfigBox
 from pathlib import Path
 import json
+import zipfile
 import shutil,dill
 import os,sys
 from typing import Any
@@ -12,8 +13,9 @@ from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_sc
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.base import BaseEstimator
 from src.logger import logger
+from mypy_boto3_s3.service_resource import Bucket,S3ServiceResource 
 from src.exception import SensorFaultException
-from src.entity.config_entity import BaseArtifactConfig,ModelTrainerConfig
+from src.entity.config_entity import BaseArtifactConfig,ModelTrainerConfig,ModelTunerConfig
 from src.entity.artifact_entity import ModelTunerArtifacts
 
 
@@ -232,8 +234,13 @@ def format_as_s3_path(path:Path) -> str:
         str: s3_path
     """
     try:
-        s3_path  = str(path)
-        s3_path = s3_path.replace('\\','/')+'/'
+        # if path is file path
+        if os.path.isfile(path):
+            s3_path  = str(path)
+            s3_path = s3_path.replace('\\','/')
+        else:
+            s3_path  = str(path)        
+            s3_path = s3_path.replace('\\','/')+'/'
         logger.info(f'convert path:{path} to s3_path:{s3_path} successfully')
         return s3_path
     except Exception as e:
@@ -306,8 +313,7 @@ def load_obj(file_path:Path)-> object:
         error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
         logger.error(f"load object   ::  Status:Failed :: Error:{error_message}")
         raise error_message    
-    
-    
+     
 def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFrame,y_train:pd.DataFrame,y_test:pd.DataFrame)-> tuple[BaseEstimator,dict[str, Any]]:
     """model_result :Used for store model result data in dict format
 
@@ -368,39 +374,36 @@ def save_model_result_excel(df:pd.DataFrame, excel_file_path) -> None:
             logger.error(msg=f"save_model_result_excel :: Status:Failed :: Error:{error_message}")
             raise error_message
 
-def save_models_data(experiment_all_model_objects_path:Path,
-                experiment_best_model_object_path:Path,
-                stable_all_model_objects_path:Path,
-                stable_best_model_object_path:Path,
+def save_models_data(all_model_objects_path:Path,
+                best_model_object_path:Path,
                 model_tuner_artifacts:ModelTunerArtifacts):
     """save_models_data :Used for save the model results & model objects
 
     Args:
-        experiment_all_model_objects_path (Path): path of experiment files of store all models data
-        experiment_best_model_object_path (Path): path of experiment files of store best model data
-        stable_all_model_objects_path (Path): path of stable files of store all models data
-        stable_best_model_object_path (Path): path of stable files of store best mode data
+        all_model_objects_path (Path): path of  files of store all models data
+        best_model_object_path (Path): path of  files of store best model data
         model_tuner_artifacts (ModelTunerArtifacts): contains  all models results and best model results
 
     Raises:
         error_message: Custom Exception
     """
     try:
-        create_folder_using_folder_path(experiment_all_model_objects_path)
-        create_folder_using_folder_path(experiment_best_model_object_path)
-        create_folder_using_folder_path(stable_all_model_objects_path)
-        create_folder_using_folder_path(stable_best_model_object_path)
-        
+        create_folder_using_folder_path(all_model_objects_path)
+        create_folder_using_folder_path(best_model_object_path)
+                
         all_models_data = model_tuner_artifacts.all_models_data
         best_model_data = model_tuner_artifacts.best_model_data
 
         
         for model_name,model_obj in all_models_data[0].items():
             file_name = model_name+".dill"
-            exp_all_model_file_path = experiment_all_model_objects_path / file_name
-            stable_all_model_file_path = stable_all_model_objects_path / file_name
             
-            final_file_path = find_final_path(experiment_file_path=exp_all_model_file_path,stable_file_path=stable_all_model_file_path)
+            all_model_file_path = all_model_objects_path / file_name
+            
+            # final_file_path = find_final_path(experiment_file_path=exp_all_model_file_path,stable_file_path=stable_all_model_file_path)
+            
+            final_file_path = all_model_file_path
+            
             #save model object
             save_obj(final_file_path,model_obj)
             
@@ -410,12 +413,15 @@ def save_models_data(experiment_all_model_objects_path:Path,
             
         
         file_name = "best_model.dill"
-        exp_best_model_path = experiment_best_model_object_path / file_name
-        stable_best_file_path = stable_best_model_object_path / file_name
+        # exp_best_model_path = experiment_best_model_object_path / file_name
+        # stable_best_file_path = stable_best_model_object_path / file_name
         
-        final_file_path = find_final_path(experiment_file_path=exp_best_model_path,stable_file_path=stable_best_file_path)
+        best_model_obj_file_path = best_model_object_path / file_name
+        # final_file_path = find_final_path(experiment_file_path=exp_best_model_path,stable_file_path=stable_best_file_path)
+        
+        final_file_path = best_model_obj_file_path
+        
         #save model object
-        # save_obj(final_file_path,model_obj)
         best_model_obj = best_model_data[0]
         best_model_results = best_model_data[1]
         
@@ -453,8 +459,7 @@ def find_final_path(experiment_file_path:Path,stable_file_path:Path) -> Path:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"save_object_to_experiment_and_stable :: Status:Failed :: Error:{error_message}")
             raise error_message
-                        
-                        
+                                             
 def proper_conversion_for_excel_file(result_dict:dict) -> pd.DataFrame:
     """proper_conversion_for_excel_file :Used for change data into proper for format for excel file
 
@@ -487,6 +492,108 @@ def proper_conversion_for_excel_file(result_dict:dict) -> pd.DataFrame:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"proper_conversion_for_excel_file :: Status:Failed :: Error:{error_message}")
             raise error_message                              
+              
+def get_dir_path_from_file_path(file_path:Path) -> Path:
+    """get_dir_path_from_file_path Used getting the dir path from the file path
+
+    Args:
+        file_path (Path): file_path
+
+    Raises:
+        error_message: Custom Exception
+
+    Returns:
+        Path: dir path
+    """
+    try:
+        dir_path = os.path.dirname(file_path)    
+        logger.info(msg=f"get_dir_path_from_file_path :: Status:Success :: file_path:{file_path} :: folder_path:{dir_path} ")
+        return Path(dir_path)
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"get_dir_path_from_file_path :: Status:Failed :: file_path:{file_path} :: Error:{error_message}")
+            raise error_message                              
+                
+def copy_file(src_file_path:Path,dst_folder_path:Path):
+    """copy_file :Used for copy file from source file path to destination folder path
+
+    Args:
+        src_file_path (Path): Path of source file path
+        dst_folder_path (Path): destination folder path
+
+    Raises:
+        error_message: Custom Exception
+    """
+    try:
+        shutil.copy2(src=src_file_path,dst=dst_folder_path)
+        logger.info(msg=f"copy_file :: Status:Success :: src_file_path:{src_file_path} :: dst_folder_path:{dst_folder_path} ")
         
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"get_dir_path_from_file_path :: Status:Failed :: Error:{error_message}")
+            raise error_message    
+
+def create_zip_from_folder(folder_path:Path, output_zip_path:Path):
+    """create_zip_from_folder :Used for create zip for folder data
+
+    Args:
+        folder_path (Path): folder path
+        output_zip_path (Path): zip file path
+
+    Raises:
+        error_message: Custom Exception
+    """
+    try:
+        # Create a zip file at the specified output path
+        with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Walk through the folder, including all subdirectories and files
+            for root, dirs, files in os.walk(folder_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Add file to the zip, preserving the folder structure
+                    arcname = os.path.relpath(file_path, folder_path)  # Relative path inside the zip
+                    zipf.write(file_path, arcname)
+                    logger.info(f'Added {file_path} as {arcname}')                    
+        logger.info(f"create_zip_from_folder :: Status:Success :: folder_path__path:{folder_path} :: output_zip_path:{output_zip_path}")
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"create_zip_from_folder :: Status:Failed :: folder_path__path:{folder_path} :: output_zip_path:{output_zip_path} :: Error:{error_message}")
+            raise error_message
+                                
+def models_auc_threshold_satisfied() -> bool:
+    """ models_auc_threshold_satisfied:Used for check all three models auc score are satisfied the auc threshold value or not 
+
+    Raises:
+        error_message: Custom Exception
+
+    Returns:
+        bool: return True if satisfied else return False
+    """
+    try:
+        i=0
+        best_mode_results = read_json(ModelTrainerConfig.final_best_model_results_json_file_path)
+        for cluster_name, model_data in best_mode_results.items():
+            for model_name, model_results in model_data.items():
+                if model_results['auc_score'] >= ModelTunerConfig.auc_score_threshold_value:
+                    logger.info(f"{cluster_name}:{model_name}:{model_results['auc_score']}:: Status:Satisfied")
+                    i+=1
+                else:
+                    logger.info(f"{cluster_name}:{model_name}:{model_results['auc_score']}:: Status:Not Satisfied")
+        if i==3:
+            return True
+        else:
+            return False                
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"models_auc_threshold_satisfied :: Status:Failed :: error_message:{error_message}")
+            raise error_message     
+
+def clear_artifact_folder():
+    try:
+        shutil.rmtree(Path(BaseArtifactConfig.artifact_dir))
+        logger.info(f"clear_artifact_folder :: Status:Success")
         
-        
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"clear_artifact_folder :: Status:Failed :: error_message:{error_message}")
+            raise error_message             

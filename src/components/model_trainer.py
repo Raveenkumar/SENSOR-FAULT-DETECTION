@@ -2,14 +2,13 @@ import pandas as pd
 import sys,os
 from src.exception import SensorFaultException
 from src.logger import logger
-from src.entity.config_entity import ModelTrainerConfig,ClusterConfig,PreprocessorConfig,ModelTunerConfig
+from src.entity.config_entity import ModelTrainerConfig,ClusterConfig,PreprocessorConfig,ModelTunerConfig,BaseArtifactConfig
 from src.components.model_tuner import ModelTuner
-from src.utilities.utils import (save_models_data,
-                                 proper_conversion_for_excel_file,
+from src.utilities.utils import (save_models_data,proper_conversion_for_excel_file,
                                  save_model_result_excel,
                                  save_json,
                                  save_obj,
-                                 find_final_path,
+                                 copy_file,
                                  create_folder_using_file_path)
 
 class ModelTrainer:
@@ -37,20 +36,21 @@ class ModelTrainer:
                 cluster_data = dataset[dataset[ClusterConfig.cluster_column_name]==cluster]
                 
                 X = cluster_data.drop(columns=[ClusterConfig.cluster_column_name,PreprocessorConfig.target_feature])
-                y = cluster_data[PreprocessorConfig.target_feature].map({1: 1, -1: 0})
+                y = cluster_data[PreprocessorConfig.target_feature]
                 
                 model_tuner_artifacts = self.model_tuner.initialize_model_tuner_process(X,y)
                 logger.info("MODEL TUNER ARTIFACTS: {model_tuner_artifacts}")
                 
-                exp_all_models_path = self.config.experiment_all_model_objects_path / str(cluster)
-                exp_best_models_path = self.config.experiment_best_model_object_path / str(cluster)
-                stable_all_models_path = self.config.stable_all_model_objects_path / str(cluster)
-                stable_best_model_path = self.config.stable_best_model_object_path / str(cluster)
+                # exp_all_models_path = self.config.experiment_all_model_objects_path / str(cluster)
+                # exp_best_models_path = self.config.experiment_best_model_object_path / str(cluster)
+                # stable_all_models_path = self.config.stable_all_model_objects_path / str(cluster)
+                # stable_best_model_path = self.config.stable_best_model_object_path / str(cluster)
                 
-                save_models_data(experiment_all_model_objects_path=exp_all_models_path,
-                                 experiment_best_model_object_path=exp_best_models_path,
-                                 stable_all_model_objects_path=stable_all_models_path,
-                                 stable_best_model_object_path=stable_best_model_path,
+                all_models_path = self.config.all_model_objects_path
+                best_model_path = self.config.best_model_object_path / f"Cluster_{cluster}"
+                
+                save_models_data(all_model_objects_path=all_models_path,
+                                 best_model_object_path=best_model_path,
                                  model_tuner_artifacts=model_tuner_artifacts)
                 
                 all_models_results_cluster_wise[f"Cluster:{cluster}"] = model_tuner_artifacts.all_models_data[1]
@@ -77,14 +77,19 @@ class ModelTrainer:
             save_json(self.config.best_model_results_json_file_path,best_models_results_cluster_wise)
             
             #save preprocessor stage two  objects(preprocessor,smote,pca)
-            final_standard_scalar_path = find_final_path(experiment_file_path=self.config.experiment_standard_scalar_path,
-                                                         stable_file_path=self.config.stable_standard_scalar_path)
+            # final_standard_scalar_path = find_final_path(experiment_file_path=self.config.experiment_standard_scalar_path,
+            #                                              stable_file_path=self.config.stable_standard_scalar_path)
             
-            final_smote_path = find_final_path(experiment_file_path=self.config.experiment_smote_path,
-                                                         stable_file_path=self.config.stable_smote_path)
+            # final_smote_path = find_final_path(experiment_file_path=self.config.experiment_smote_path,
+            #                                              stable_file_path=self.config.stable_smote_path)
             
-            final_pca_path = find_final_path(experiment_file_path=self.config.experiment_pca_path,
-                                                         stable_file_path=self.config.stable_pca_path)
+            # final_pca_path = find_final_path(experiment_file_path=self.config.experiment_pca_path,
+            #                                              stable_file_path=self.config.stable_pca_path)
+            
+            
+            final_standard_scalar_path = self.config.standard_scalar_path
+            final_smote_path = self.config.smote_path
+            final_pca_path = self.config.pca_path
             
             create_folder_using_file_path(final_standard_scalar_path)
             create_folder_using_file_path(final_smote_path)
@@ -93,6 +98,10 @@ class ModelTrainer:
             save_obj(file_path=final_standard_scalar_path,obj=model_tuner_artifacts.standard_scalar_object)
             save_obj(file_path=final_smote_path,obj=model_tuner_artifacts.smote_object)
             save_obj(file_path=final_pca_path,obj=model_tuner_artifacts.pca_object)
+            
+            # copy files models results json files
+            copy_file(self.config.all_model_results_json_file_path,BaseArtifactConfig.data_dir)
+            copy_file(self.config.best_model_results_json_file_path,BaseArtifactConfig.data_dir)
             
             logger.info("Ended initialize model trainer process!")
             

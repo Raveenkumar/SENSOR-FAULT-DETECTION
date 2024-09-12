@@ -295,7 +295,8 @@ class Preprocessor:
             preprocessed_data = preprocessing_pipeline.fit_transform(self.input_input_file)
             
             # storing the preprocessing object
-            final_preprocessor_object_path = find_final_path(self.config.experiment_preprocessor_object_path,self.config.stable_preprocessor_object_path)
+            # final_preprocessor_object_path = find_final_path(self.config.experiment_preprocessor_object_path,self.config.stable_preprocessor_object_path)
+            final_preprocessor_object_path = self.config.preprocessor_object_path
             create_folder_using_file_path(file_path=final_preprocessor_object_path)
             save_obj(file_path=final_preprocessor_object_path,obj=preprocessing_pipeline)   
                 

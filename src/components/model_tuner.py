@@ -20,7 +20,7 @@ from sklearn.naive_bayes import GaussianNB
 from xgboost import XGBClassifier
 from src.logger import logger
 from src.exception import SensorFaultException
-from src.entity.config_entity import ModelTunerConfig
+from src.entity.config_entity import  ModelTunerConfig
 from src.utilities.utils import model_result
 from src.entity.artifact_entity import ModelTunerArtifacts
 import numpy as np

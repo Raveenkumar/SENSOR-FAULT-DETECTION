@@ -15,7 +15,7 @@ class RawDataTransformation:
     def __init__(self,config:Union[TrainingRawDataTransformationConfig,PredictionRawDataTransformationConfig],rawdata_validation_artifacts:RawDataValidationArtifacts) -> None:
         self.config = config
         self.rawdata_validation_artifacts_= rawdata_validation_artifacts
-        self.raw_data_folder = self.config.good_raw_data_folder_path
+        self.raw_data_folder = self.rawdata_validation_artifacts_.good_raw_data_folder
         self.merge_file_path = self.config.merge_file_path
     
     def convert_good_raw_into_single_file(self,input_folder:Path) -> pd.DataFrame:

@@ -2,29 +2,36 @@ import sys,os,re,shutil
 from typing import Union,Literal
 import pandas as pd
 from pathlib import Path
-from src.entity.config_entity import (TrainingRawDataValidationConfig,
+from src.entity.config_entity import (DataIngestionConfig,
+                                      S3Config,
+                                      TrainingRawDataValidationConfig,
                                       TrainingRawDataTransformationConfig,
                                       PreprocessorConfig,
                                       ClusterConfig,
                                       ModelTunerConfig,
-                                      ModelTrainerConfig)
-
+                                      ModelTrainerConfig,
+                                      S3Config,)
+from src.entity.artifact_entity import RawDataValidationArtifacts
 from src.utilities.utils import read_json,read_csv_file 
 from src.logger import logger
 from src.exception import SensorFaultException
 from src.components.rawdata_validation import RawDataValidation
 from src.components.rawdata_transformation import RawDataTransformation
-from src.components.data_ingestion import DataIngestion
+from src.components.data_ingestion import DataIngestion,GetTrainingData
 from src.components.data_preprocessing import Preprocessor
 from src.components.data_clustering import Clusters
 from src.components.model_trainer import ModelTrainer
+from src.db_management.aws_storage import SimpleStorageService
 
 
 
 
 class TrainingPipeline:
-    def __init__(self,files_path):
-        self.files_path :Path = files_path
+    def __init__(self):
+        self.s3_config = S3Config()
+        self.s3 = SimpleStorageService(config=self.s3_config)
+        self.s3_bucket_obj = self.s3.get_bucket(bucket_name=self.s3_config .bucket_name)
+        self.data_ingestion_config = DataIngestionConfig()
         self.rawdata_validation_config = TrainingRawDataValidationConfig()
         self.rawdata_transformation_config = TrainingRawDataTransformationConfig()
         self.preprocessor_config = PreprocessorConfig()
@@ -36,15 +43,27 @@ class TrainingPipeline:
     def initialize_pipeline(self):
         try:
             logger.info(msg="---------------Started Training Pipeline---------------")
-            logger.info(msg=f"Folder Path:{self.files_path}")
-            raw_data_validation = RawDataValidation(self.rawdata_validation_config,folder_path=self.files_path)
-            raw_data_validation_artifacts = raw_data_validation.initialize_rawdata_validation_process()
+            
+            get_training_data = GetTrainingData(data_ingestion_config=self.data_ingestion_config,
+                                                                    s3_obj=self.s3,
+                                                                    s3_config=self.s3_config,
+                                                                    s3_bucket_obj=self.s3_bucket_obj)
+            
+            status,files_path = get_training_data.initialize_getting_training_data_process()
+            logger.info(msg=f"Folder Path:{files_path}")
+            if status=="default_training":
+                raw_data_validation = RawDataValidation(self.rawdata_validation_config,folder_path=files_path)
+                raw_data_validation_artifacts = raw_data_validation.initialize_rawdata_validation_process()
+            else:
+                raw_data_validation_artifacts = RawDataValidationArtifacts(good_raw_data_folder=files_path,
+                                                                           bad_raw_data_folder=self.rawdata_validation_config.bad_raw_data_folder_path,
+                                                                           validation_log_file_path=self.rawdata_validation_config.validation_report_file_path) 
             
             raw_data_transformation = RawDataTransformation(config=self.rawdata_transformation_config,
                                                             rawdata_validation_artifacts=raw_data_validation_artifacts)
-            raw_data_transformation_artifacts = raw_data_transformation.initialize_data_transformation_process()
+            self.raw_data_transformation_artifacts = raw_data_transformation.initialize_data_transformation_process()
             
-            data_ingestion = DataIngestion(input_dataset_path=raw_data_transformation_artifacts.final_file_path)
+            data_ingestion = DataIngestion(input_dataset_path=self.raw_data_transformation_artifacts.final_file_path)
             data_ingestion_artifacts = data_ingestion.initialize_data_ingestion_process()
             
             input_file = data_ingestion_artifacts.input_dataframe

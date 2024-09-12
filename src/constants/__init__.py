@@ -24,6 +24,7 @@ BAD_RAW_DATA_FOLDER_NAME: str = "bad_raw_data"
 EVALUATION_DATA_FOLDER_NAME: str  = "evaluation_data"
 TRAINING_VALIDATION_LOG_FILE: str = "training_validation_logs.xlsx"
 PREDICTION_VALIDATION_LOG_FILE: str = "prediction_validation_logs.xlsx"
+BAD_RAW_ZIP_FILE_NAME:str = "bad_raw_data.zip"
 
 
 # transformation constants
@@ -98,14 +99,20 @@ HANDLE_IMBALANCE_SMOTE_OBJECT_NAME : str = "handle_imbalance_smote.dill"
 PCA_OBJECT_NAME: str = "pca.dill"
 EXCEL_FILES_FOLDER_NAME : str = "excel_files"
 JSON_FILES_FOLDER_NAME : str = "json_files"
-ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME: str = "models_result.xlsx"
+ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME: str = "ALL_models_result.xlsx"
 BEST_MODEL_RESULT_DATA_EXCEL_FILE_NAME: str = "best_model_result.xlsx"
-ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME: str = "models_result.json"
+ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME: str = "ALL_models_result.json"
 BEST_MODEL_RESULT_DATA_JSON_FILE_NAME: str = "best_model_result.json"
 EXCEL_AND_JSON_FILES_FOLDER_NAME: str = "excel_and_json_files"
 
 #s3 constants
 BUCKET_NAME:str = 'wafersensorsdata'
+S3_TRAINING_DATA_FOLDER_NAME: str = "training_data"
+S3_RETRAINING_DATA_FOLDER_NAME: str = "retraining_data"
+S3_CLIENT_DB_FOLDER_NAME: str = "client_db_data"
+DEFAULT_TRAINING_BATCH_FILES:str = "training_batch_files"
+
+
 
 #api_constants
 APP_HOST:str = "0.0.0.0"

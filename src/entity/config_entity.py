@@ -11,8 +11,14 @@ TIMESTAMP: str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 @dataclass
 class BaseArtifactConfig:
     timestamp: str = TIMESTAMP
-    artifact_base_dir = Path(ARTIFACT_FOLDER_NAME)
-    artifact_dir:Path = artifact_base_dir / timestamp
+    artifact_base_dir = ARTIFACT_FOLDER_NAME
+    artifact_dir:Path = Path(artifact_base_dir) / timestamp
+    data_dir = Path(DATA_FOLDER_NAME)
+    
+
+@dataclass
+class DataIngestionConfig:
+    training_batch_files_folder_path:Path = Path(os.path.join(BaseArtifactConfig.artifact_base_dir,DEFAULT_TRAINING_BATCH_FILES))    
 
 @dataclass    
 class LogValidationConfig:
@@ -27,7 +33,9 @@ class TrainingRawDataValidationConfig:
     bad_raw_data_folder_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,TRAINING_DATA_FOLDER_NAME,BAD_RAW_DATA_FOLDER_NAME))
     validation_report_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,TRAINING_DATA_FOLDER_NAME,EVALUATION_DATA_FOLDER_NAME,TRAINING_VALIDATION_LOG_FILE))
     schema_file_path = Path('config') / 'training_schema.json'
-
+    dashboard_validation_report_file_path = BaseArtifactConfig.data_dir / TRAINING_VALIDATION_LOG_FILE
+    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir/BAD_RAW_ZIP_FILE_NAME
+    
 @dataclass
 class PredictionRawDataValidationConfig:
     purpose = "Prediction"
@@ -38,6 +46,8 @@ class PredictionRawDataValidationConfig:
     bad_raw_data_folder_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,BAD_RAW_DATA_FOLDER_NAME))
     schema_file_path = Path('config') / 'training_schema.json'
     validation_report_file_path =  Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,EVALUATION_DATA_FOLDER_NAME,PREDICTION_VALIDATION_LOG_FILE))
+    dashboard_validation_report_file_path = BaseArtifactConfig.data_dir / PREDICTION_VALIDATION_LOG_FILE
+    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir / BAD_RAW_ZIP_FILE_NAME
     
 @dataclass
 class TrainingRawDataTransformationConfig(TrainingRawDataValidationConfig):
@@ -63,31 +73,29 @@ class PreprocessorConfig:
     lower_percentile = LOWER_PERCENTILE
     upper_percentile = UPPER_PERCENTILE
     iqr_multiplier = IQR_MULTIPLIER
-    experiment_preprocessor_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+    preprocessor_object_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                             MODEL_DATA_FOLDER_NAME,
-                                                            EXPERIMENT_FOLDER_NAME,
                                                             PREPROCESSOR_FOLDER_NAME,
                                                             PREPROCESSOR_OBJECT_NAME))
-    stable_preprocessor_object_path = Path(os.path.join(DATA_FOLDER_NAME,
-                                                        MODEL_DATA_FOLDER_NAME,
-                                                        STABLE_FOLDER_NAME,
-                                                        PREPROCESSOR_FOLDER_NAME,
-                                                        PREPROCESSOR_OBJECT_NAME))
+    # stable_preprocessor_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+    #                                                     MODEL_DATA_FOLDER_NAME,
+    #                                                     STABLE_FOLDER_NAME,
+    #                                                     PREPROCESSOR_FOLDER_NAME,
+    #                                                     PREPROCESSOR_OBJECT_NAME))
 
 @dataclass
 class ClusterConfig:
     cluster_column_name = CLUSTER_COLUMN_NAME
-    experiment_cluster_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+    cluster_object_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                             MODEL_DATA_FOLDER_NAME,
-                                                            EXPERIMENT_FOLDER_NAME,
                                                             CLUSTER_FOLDER_NAME,
                                                             CLUSTER_OBJECT_NAME))
     
-    stable_cluster_object_path = Path(os.path.join(DATA_FOLDER_NAME,
-                                                        MODEL_DATA_FOLDER_NAME,
-                                                        STABLE_FOLDER_NAME,
-                                                        CLUSTER_FOLDER_NAME,
-                                                        CLUSTER_OBJECT_NAME))
+    # stable_cluster_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+    #                                                     MODEL_DATA_FOLDER_NAME,
+    #                                                     STABLE_FOLDER_NAME,
+    #                                                     CLUSTER_FOLDER_NAME,
+    #                                                     CLUSTER_OBJECT_NAME))
     
 
 @dataclass
@@ -103,44 +111,43 @@ class ModelTunerConfig:
 
 @dataclass
 class ModelTrainerConfig:
-    experiment_all_model_objects_path = Path(os.path.join(DATA_FOLDER_NAME,
+    all_model_objects_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                             MODEL_DATA_FOLDER_NAME,
-                                                            EXPERIMENT_FOLDER_NAME,
                                                             MODEL_OBJS_FOLDER_NAME))
     
-    experiment_best_model_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+    best_model_object_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                             MODEL_DATA_FOLDER_NAME,
-                                                            EXPERIMENT_FOLDER_NAME,
                                                             BEST_MODEL_OBJ_FOLDER_NAME))
     
-    stable_all_model_objects_path = Path(os.path.join(DATA_FOLDER_NAME,
-                                                        MODEL_DATA_FOLDER_NAME,
-                                                        STABLE_FOLDER_NAME,
-                                                        MODEL_OBJS_FOLDER_NAME))
-
-    stable_best_model_object_path = Path(os.path.join(DATA_FOLDER_NAME,
-                                                        MODEL_DATA_FOLDER_NAME,
-                                                        STABLE_FOLDER_NAME,
-                                                        BEST_MODEL_OBJ_FOLDER_NAME))
     
-    excel_and_json_files_folder_path = Path(os.path.join(DATA_FOLDER_NAME,
+    # stable_all_model_objects_path = Path(os.path.join(DATA_FOLDER_NAME,
+    #                                                     MODEL_DATA_FOLDER_NAME,
+    #                                                     STABLE_FOLDER_NAME,
+    #                                                     MODEL_OBJS_FOLDER_NAME))
+
+    # stable_best_model_object_path = Path(os.path.join(DATA_FOLDER_NAME,
+    #                                                     MODEL_DATA_FOLDER_NAME,
+    #                                                     STABLE_FOLDER_NAME,
+    #                                                     BEST_MODEL_OBJ_FOLDER_NAME))
+    
+    excel_and_json_files_folder_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                         MODEL_DATA_FOLDER_NAME,
                                                         EXCEL_AND_JSON_FILES_FOLDER_NAME))
     
-    all_model_results_excel_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+    all_model_results_excel_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                         MODEL_DATA_FOLDER_NAME,
                                                         EXCEL_AND_JSON_FILES_FOLDER_NAME,
                                                         EXCEL_FILES_FOLDER_NAME,
                                                         ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME))
     
-    best_model_results_excel_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+    best_model_results_excel_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                     MODEL_DATA_FOLDER_NAME,
                                                     EXCEL_AND_JSON_FILES_FOLDER_NAME,
                                                     EXCEL_FILES_FOLDER_NAME,
                                                     BEST_MODEL_RESULT_DATA_EXCEL_FILE_NAME))
     
     
-    all_model_results_json_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+    all_model_results_json_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                         MODEL_DATA_FOLDER_NAME,
                                                         EXCEL_AND_JSON_FILES_FOLDER_NAME,
                                                         JSON_FILES_FOLDER_NAME,
@@ -148,54 +155,70 @@ class ModelTrainerConfig:
     
    
     
-    best_model_results_json_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+    best_model_results_json_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                         MODEL_DATA_FOLDER_NAME,
                                                         EXCEL_AND_JSON_FILES_FOLDER_NAME,
                                                         JSON_FILES_FOLDER_NAME,
                                                         BEST_MODEL_RESULT_DATA_JSON_FILE_NAME))
     
-    experiment_standard_scalar_path = Path(os.path.join(DATA_FOLDER_NAME,
+    standard_scalar_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                             MODEL_DATA_FOLDER_NAME,
-                                                            EXPERIMENT_FOLDER_NAME,
                                                             PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
                                                             STANDARD_SCALAR_OBJECT_NAME))
                                            
-    experiment_smote_path = Path(os.path.join(DATA_FOLDER_NAME,
+    smote_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                             MODEL_DATA_FOLDER_NAME,
-                                                            EXPERIMENT_FOLDER_NAME,
                                                             PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
                                                             HANDLE_IMBALANCE_SMOTE_OBJECT_NAME))
                     
-    experiment_pca_path = Path(os.path.join(DATA_FOLDER_NAME,
-                                                            MODEL_DATA_FOLDER_NAME,
-                                                            EXPERIMENT_FOLDER_NAME,
-                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-                                                            PCA_OBJECT_NAME))
+    pca_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
+                                        MODEL_DATA_FOLDER_NAME,
+                                        PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+                                        PCA_OBJECT_NAME))
+    
+    final_best_model_results_json_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                        BEST_MODEL_RESULT_DATA_JSON_FILE_NAME))
     
     
-    stable_standard_scalar_path = Path(os.path.join(DATA_FOLDER_NAME,
-                                                            MODEL_DATA_FOLDER_NAME,
-                                                            STABLE_FOLDER_NAME,
-                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-                                                            STANDARD_SCALAR_OBJECT_NAME))
+    # stable_standard_scalar_path = Path(os.path.join(DATA_FOLDER_NAME,
+    #                                                         MODEL_DATA_FOLDER_NAME,
+    #                                                         STABLE_FOLDER_NAME,
+    #                                                         PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+    #                                                         STANDARD_SCALAR_OBJECT_NAME))
                                            
-    stable_smote_path = Path(os.path.join(DATA_FOLDER_NAME,
-                                                            MODEL_DATA_FOLDER_NAME,
-                                                            STABLE_FOLDER_NAME,
-                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-                                                            HANDLE_IMBALANCE_SMOTE_OBJECT_NAME))
+    # stable_smote_path = Path(os.path.join(DATA_FOLDER_NAME,
+    #                                                         MODEL_DATA_FOLDER_NAME,
+    #                                                         STABLE_FOLDER_NAME,
+    #                                                         PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+    #                                                         HANDLE_IMBALANCE_SMOTE_OBJECT_NAME))
                     
-    stable_pca_path = Path(os.path.join(DATA_FOLDER_NAME,
-                                                            MODEL_DATA_FOLDER_NAME,
-                                                            STABLE_FOLDER_NAME,
-                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-                                                            PCA_OBJECT_NAME))
+    # stable_pca_path = Path(os.path.join(DATA_FOLDER_NAME,
+    #                                                         MODEL_DATA_FOLDER_NAME,
+    #                                                         STABLE_FOLDER_NAME,
+    #                                                         PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
+    #                                                         PCA_OBJECT_NAME))
     
     
     all_model_result_json_file_name = ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME
     all_model_result_excel_file_name = ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME
     best_model_json_file_name = BEST_MODEL_RESULT_DATA_JSON_FILE_NAME
     best_model_excel_file_name = BEST_MODEL_RESULT_DATA_EXCEL_FILE_NAME
+
+
+
+@dataclass
+class S3Config:
+    bucket_name = BUCKET_NAME
+    default_training_batch_files_path:str = "/".join([S3_CLIENT_DB_FOLDER_NAME,DEFAULT_TRAINING_BATCH_FILES])+"/" 
+    training_files_path:str = "/".join([ARTIFACT_FOLDER_NAME,S3_TRAINING_DATA_FOLDER_NAME])+"/"
+    retraining_files_path:str = "/".join([ARTIFACT_FOLDER_NAME,S3_RETRAINING_DATA_FOLDER_NAME])+"/"
+    champion_folder_path: str = "prediction_model_data/champion/"
+    challenger_folder:str = "prediction_model_data/challenger/"
+    models_source_path:str = "/".join([BaseArtifactConfig.artifact_base_dir,BaseArtifactConfig.timestamp,MODEL_DATA_FOLDER_NAME])+"/"
+    
+
+
+    
 
 @dataclass
 class AppConfig:

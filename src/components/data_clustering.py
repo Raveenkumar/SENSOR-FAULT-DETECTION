@@ -62,7 +62,8 @@ class Clusters:
         try:
             kmeans = KMeans(n_clusters=optimal_clusters, random_state=42)
             cluster_labels = kmeans.fit_predict(X)
-            final_cluster_object_path = find_final_path(self.config.experiment_cluster_object_path,self.config.stable_cluster_object_path)
+            # final_cluster_object_path = find_final_path(self.config.experiment_cluster_object_path,self.config.stable_cluster_object_path)
+            final_cluster_object_path = self.config.cluster_object_path
             create_folder_using_file_path(file_path=final_cluster_object_path)
             save_obj(file_path=final_cluster_object_path,obj=kmeans)
             

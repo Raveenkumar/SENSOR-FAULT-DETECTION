@@ -7,9 +7,13 @@ from pathlib import Path
 import pandas as pd
 from uvicorn import run as app_run
 from src.constants import APP_HOST, APP_PORT
-from src.entity.config_entity import PredictionRawDataValidationConfig
+from src.entity.config_entity import PredictionRawDataValidationConfig,BaseArtifactConfig,S3Config
+from src.entity.artifact_entity import RawDataTransformationArtifacts
 from src.logger import logger
-from src.pipeline.train_models import training_model, get_training_results
+from src.pipeline.train_models import  get_training_results
+from src.pipeline.training_pipeline import TrainingPipeline
+from src.utilities.utils import clear_artifact_folder
+import asyncio
 
 app = FastAPI()
 
@@ -68,29 +72,61 @@ async def upload_files(files: list[UploadFile] = File(...)):
     return JSONResponse({"message": "Files uploaded successfully"})
 
 ## training related----start here----
+# Training status and pipeline objects
 training_status = {"completed": False}
-async def train_model():
-    training_model()
-    training_status["completed"] = True
+upload_status = {"completed": False}
+training_pipeline = TrainingPipeline()
 
+async def train_model():
+    await asyncio.sleep(0)  # Yield control to the event loop
+    training_pipeline.initialize_pipeline()
+    training_status["completed"] = True
+    
+async def upload_data_to_s3():
+    if not upload_status["completed"]:
+        # Only upload if it hasn't been completed before
+        try:
+            local_artifact_folder_path = BaseArtifactConfig.artifact_dir
+            s3_bucket = training_pipeline.s3_bucket_obj
+            training_pipeline.s3.upload_folder_to_s3(bucket_obj=s3_bucket, local_folder_path=local_artifact_folder_path)
+            
+            local_training_files_path = training_pipeline.rawdata_transformation_config.merge_file_path
+            s3_training_files_path = training_pipeline.s3_config.training_files_path
+            training_pipeline.s3.upload_files_to_s3(bucket_obj=s3_bucket, 
+                                                    local_folder_path=local_training_files_path, 
+                                                    s3_subfolder_path=s3_training_files_path)
+            
+            training_pipeline.s3.store_prediction_models()
+            clear_artifact_folder()
+            
+            upload_status["completed"] = True  # Mark upload as completed
+            
+        except Exception as e:
+            print(f"Upload failed: {e}")
+    
+    
+    
 @app.get("/train")
 async def train_route(request: Request, background_tasks: BackgroundTasks):
+    # Start the training in the background
     background_tasks.add_task(train_model)
     return templates.TemplateResponse("training.html", {"request": request})
 
 @app.get("/training_results")
-async def get_training_results_route(request: Request):
-    # Check if training is completed
-    if not training_status["completed"]:
-        return JSONResponse(content={"status": "Training in progress"}, status_code=202)
-    
-    results = get_training_results()  # Replace with actual code to fetch results
-    return templates.TemplateResponse("training_report.html", {
-        "request": request,
-        "results": results,
-        "eda_url": "/static/eda.html",
-        "datadrift_url": "/static/datadrift.html"
-    })  
+async def get_training_results_route(request: Request, background_tasks: BackgroundTasks):
+    # Check if training is completed and upload hasn't already been done
+    if training_status["completed"] and not upload_status["completed"]:
+        background_tasks.add_task(upload_data_to_s3)
+        results = get_training_results() 
+        return templates.TemplateResponse("training_report.html", {
+            "request": request,
+            "results": results,
+            "eda_url": "/static/eda.html",
+            "datadrift_url": "/static/datadrift.html"
+        })
+    # else:
+    #     # Render the training page if training is still in progress
+    #     return templates.TemplateResponse("training.html", {"request": request})   
 ## training related----end here----
 
 

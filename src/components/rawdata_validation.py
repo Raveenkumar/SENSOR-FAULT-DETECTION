@@ -2,7 +2,11 @@ import sys,os,re,shutil
 from typing import Union,Literal
 from src.entity.config_entity import TrainingRawDataValidationConfig, PredictionRawDataValidationConfig
 from pathlib import Path
-from src.utilities.utils import read_json,read_csv_file,append_log_to_excel,create_folder_using_file_path,create_folder_using_folder_path
+from src.utilities.utils import (read_json,read_csv_file,
+                                 append_log_to_excel,
+                                 create_folder_using_file_path,
+                                 create_folder_using_folder_path,copy_file,
+                                 create_zip_from_folder)
 from src.logger import logger
 from src.exception import SensorFaultException
 import pandas as pd
@@ -14,11 +18,13 @@ from src.entity.artifact_entity import RawDataValidationArtifacts
 class RawDataValidation:
     def __init__(self,config: Union[TrainingRawDataValidationConfig, PredictionRawDataValidationConfig], folder_path: Path):
         self.data_files_path = folder_path
+        self.config = config
         self.schema_file = read_json(file_path=config.schema_file_path)
-        self.good_raw_data_path = config.good_raw_data_folder_path
-        self.bad_raw_data_path = config.bad_raw_data_folder_path
-        self.regex_file_name_format = config.raw_file_name_regex_format
-        self.validation_report_file_path = config.validation_report_file_path
+        self.good_raw_data_path = self.config.good_raw_data_folder_path
+        self.bad_raw_data_path = self.config.bad_raw_data_folder_path
+        self.regex_file_name_format = self.config.raw_file_name_regex_format
+        self.validation_report_file_path = self.config.validation_report_file_path
+        self.dashboard_validation_report_file_path = self.config.dashboard_validation_report_file_path
         
     def filename_validation(self,file_name:str) -> Literal['Passed'] | Literal['Failed']:
         """filename_validation: Used for validate the file name format
@@ -237,6 +243,12 @@ class RawDataValidation:
 
                 # If all validations pass, move to good_raw_folder
                 shutil.move(src=file_path, dst=self.good_raw_data_path)
+            
+            # copy validation report file to data folder 
+            copy_file(self.validation_report_file_path,self.dashboard_validation_report_file_path)
+            
+            # zip the bad raw data
+            create_zip_from_folder(self.bad_raw_data_path,self.config.dashboard_bad_raw_zip_file_path)
             
             result = RawDataValidationArtifacts(good_raw_data_folder=self.good_raw_data_path,
                                                 bad_raw_data_folder=self.bad_raw_data_path,
