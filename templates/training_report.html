@@ -1,17 +1,17 @@
-<!-- templates/training_results.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Training Results</title>
+    <title>Training Report</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="dashboard-container">
-        <h1>Training Results</h1>
+        <h1 class="animated-heading-two">Training Report</h1>
 
-        <!-- Display model-related data -->
+        <!-- Model Performance -->
         <div class="results-section">
             <h2>Model Performance</h2>
             <p>Accuracy: {{ results['accuracy'] }}</p>
@@ -19,12 +19,79 @@
             <p>Other Scores: {{ results['other_scores'] }}</p>
         </div>
 
-        <!-- EDA and Data Drift Reports -->
-        <div class="reports-section">
-            <h2>Reports</h2>
-            <a href="{{ eda_url }}" target="_blank" class="submit-btn">View EDA Report</a>
-            <a href="{{ datadrift_url }}" target="_blank" class="submit-btn">View Data Drift Report</a>
+        <!-- validation plots -->
+        {% if not hide_validation_report %}
+        <div class="plot-container">
+            <h2>Validation Summary</h2>
+            <canvas id="validationPlot_one"></canvas>
+            <canvas id="validationPlot_two"></canvas>
         </div>
-    </div>
+        {% endif %}
+
+        <!-- preprocessing plots -->
+        <div class="plot-container">
+            <h2>Preprocessing Summary</h2>
+            <div class="plot-container">
+                <h3>Handle Rows</h3>
+                <canvas id="noDuplicateRowsPlot"></canvas>
+            </div>
+            <!-- Plot for Remaining Preprocessing Columns -->
+            <div class="plot-container">
+                <h3>Handle Columns</h3>
+                <canvas id="remainingPreprocessingPlot"></canvas>
+            </div>
+        </div>
+
+        <!-- all model results plots -->
+        <div class="plot-container">
+            <h2>All Model Results Summary</h2>
+            {% for cluster_name, models in clusters_data.items() %}
+            <div class="cluster-container">
+                <h3>{{ cluster_name }}</h3>
+
+                {% for model in models %}
+                    <div class="model-container">
+                        <h5>{{ model.model_name }}</h5>
+                        <canvas id="plot_{{ cluster_name | replace(' ', '_') }}_{{ model.model_name | replace(' ', '_') }}"></canvas>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        <!-- Best model results plots -->
+        <div class="plot-container best-model-container">
+            <h2>Best Model Results Summary</h2>
+            {% for cluster_name, models in best_model_clusters_data.items() %}
+            <div class="cluster-container">
+                <h3>{{ cluster_name }}</h3>
+
+                {% for model in models %}
+                    <div class="model-container">
+                        <h5>{{ model.model_name }}</h5>
+                        <canvas id="best_plot_{{ cluster_name | replace(' ', '_') }}_{{ model.model_name | replace(' ', '_') }}"></canvas>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- EDA and Data Drift Reports -->
+        <div class="ml-flow-container">
+            <a href="{{ datadrift_url }}" target="_blank" class="submit-btn">View ML FLOW</a>
+        </div>
+
+
+    <!-- Inject Data for JavaScript -->
+    <script>
+        (function() {
+            window.validation_summary = {{ validation_summary | tojson | safe }};
+            window.validation_status_reasons = {{ validation_status_reasons | tojson | safe }};
+            window.preprocessing_summary = {{ preprocessing_summary | tojson | safe }};
+            window.clusters_data = {{ clusters_data | tojson | safe }};    
+            window.best_model_clusters_data = {{ best_model_clusters_data | tojson | safe }};
+        })();
+    </script>
+
+    <script src="{{ url_for('static', path='/js/training_report.js') }}"></script>
 </body>
 </html>

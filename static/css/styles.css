@@ -3,7 +3,7 @@ body {
     font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #74ebd5, #acb6e5);  /* Gradient background */
+    background: linear-gradient(135deg, #71f484, #e74c4c);  /* Gradient background */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -17,7 +17,8 @@ body {
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
-    max-width: 1000px;
+    max-width: 65%;  /* Adjust the width to cover full space */
+    width: 65%;  /* Set width to full for wider layout */
     margin: 0 auto;
     text-align: center;
     animation: slideInUp 0.7s ease-in-out;
@@ -47,6 +48,40 @@ h1, h2 {
 .prediction-section.show {
     display: block;
     animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Add extra margin to the best model plots container */
+.best-model-container {
+    margin-bottom: 80px;  /* Increase space between the last plot and the ML Flow section */
+    padding-bottom: 20px;
+}
+
+/* Cluster container spacing */
+.cluster-container {
+    margin-bottom: 40px;  /* Add spacing between each cluster of models */
+}
+
+/* Spacing adjustment for the ML Flow container */
+.ml-flow-container {
+    margin-top: 60px; /* Increased top margin for ML Flow button */
+    padding-top: 30px;
+    margin-bottom: 30px; /* Adds bottom space to ensure proper alignment */
+}
+
+/* Adjusting plot label clarity */
+canvas {
+    padding: 20px;  /* Increase padding around the canvas to avoid label overlap */
+}
+
+/* Ensure plot labels and elements have enough space */
+.plot-container canvas {
+    max-width: 100%;
+    margin-bottom: 40px; /* Increase spacing between the plots */
+}
+
+/* Optional: You can increase the margin if you need even more separation */
+.model-container h5 {
+    margin-bottom: 15px; /* Adds space between model name and the plot */
 }
 
 /* Buttons */
@@ -110,9 +145,47 @@ h1, h2 {
 /* Wafer Fault Detection Animated Heading */
 .animated-heading {
     font-size: 3rem;
-    color: #4CAF50;
-    animation: fadeInBackground 2s ease-in-out, colorChange 5s infinite alternate;
-    text-shadow: 2px 2px #333;
+    background: linear-gradient(90deg, #4CAF50, #33C3FF, #FF5733, #FFB3BA);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: gradientMove 4s ease-in-out infinite, scaleEffect 1.5s ease-in-out infinite;
+    text-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+    font-weight: bold;
+}
+
+.animated-heading-two {
+    font-size: 3rem;
+    background: linear-gradient(90deg, #4CAF50, #33C3FF, #FF5733, #FFB3BA);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    /* animation: scaleEffect 1.5s ease-in-out infinite; */
+    text-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+    font-weight: bold;
+}
+
+/* Gradient Animation */
+@keyframes gradientMove {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Scale Animation */
+@keyframes scaleEffect {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 /* Keyframes for Color Animation */
@@ -128,3 +201,4 @@ h1, h2 {
     color: #333;
     animation: fadeIn 1s ease-in-out;
 }
+

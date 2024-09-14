@@ -12,7 +12,7 @@ from src.entity.artifact_entity import RawDataTransformationArtifacts
 from src.logger import logger
 from src.pipeline.train_models import  get_training_results
 from src.pipeline.training_pipeline import TrainingPipeline
-from src.utilities.utils import clear_artifact_folder
+from src.utilities.utils import clear_artifact_folder,read_json
 import asyncio
 
 app = FastAPI()
@@ -51,7 +51,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
             # Use os.path.join to construct the full file path properly
             file_path = os.path.join(upload_dir, file_name) # type: ignore
             logger.info(f"Saving file to: {file_path}")
-
+ 
             # Read the file content asynchronously
             content = await file.read()
             
@@ -103,9 +103,7 @@ async def upload_data_to_s3():
             
         except Exception as e:
             print(f"Upload failed: {e}")
-    
-    
-    
+        
 @app.get("/train")
 async def train_route(request: Request, background_tasks: BackgroundTasks):
     # Start the training in the background
@@ -114,19 +112,68 @@ async def train_route(request: Request, background_tasks: BackgroundTasks):
 
 @app.get("/training_results")
 async def get_training_results_route(request: Request, background_tasks: BackgroundTasks):
-    # Check if training is completed and upload hasn't already been done
-    if training_status["completed"] and not upload_status["completed"]:
-        background_tasks.add_task(upload_data_to_s3)
-        results = get_training_results() 
-        return templates.TemplateResponse("training_report.html", {
-            "request": request,
-            "results": results,
-            "eda_url": "/static/eda.html",
-            "datadrift_url": "/static/datadrift.html"
-        })
-    # else:
-    #     # Render the training page if training is still in progress
-    #     return templates.TemplateResponse("training.html", {"request": request})   
+    # Load Excel data for plots
+    validation_data = pd.read_excel('./data/training_validation_logs.xlsx')
+    preprocessing_data = pd.read_excel('./data/preprocessing_report.xlsx')
+    all_model_results_data = read_json('./data/ALL_models_result.json') # type: ignore
+    best_model_results_data = read_json('./data/best_model_result.json') # type: ignore
+
+    # Determine if 'final_file.csv' is used
+    file_counts = validation_data['FILENAME'].value_counts().to_dict()
+    hide_validation_report = 'final_file.csv' in file_counts and file_counts['final_file.csv'] > 0
+
+    # Process validation data for plots
+    validation_summary = validation_data['STATUS'].value_counts().to_dict()
+    validation_status_reasons = validation_data[validation_data['STATUS'] == 'Failed']['STATUS_REASON'].value_counts().to_dict()
+
+    # Process Preprocessing Summary for multiple plots
+    preprocessing_summary = {
+        "total_columns": int(preprocessing_data['total_columns'].sum()),
+        "total_records": int(preprocessing_data['total_records'].sum()),
+        "no_of_duplicate_rows": int(preprocessing_data['no_of_duplicate_rows'].sum()),
+        "zero_std_columns": int(preprocessing_data['zero_std_columns'].sum()),
+        "nan_contains_columns": int(preprocessing_data['nan_contains_columns'].sum()),
+        "highskew_columns": int(preprocessing_data['highskew_columns'].sum()),
+        "outlier_columns": int(preprocessing_data['outlier_columns'].sum())
+    }
+    
+    # all models_data_cluster_wise
+    # Process all models results dynamically, remove 'best_param' and keep the necessary data
+    clusters_data = {}
+    for cluster_name, cluster_data in all_model_results_data.items():
+        clusters_data[cluster_name] = []
+        for model_name, model_data in cluster_data.items():
+            model_data.pop('best_param', None)  # Remove 'best_param' from model data
+            clusters_data[cluster_name].append({
+                'model_name': model_name,
+                'model_scores': model_data  # Assuming this includes scores like accuracy, recall, etc.
+            })        
+            
+    best_model_clusters_data = {}
+    for cluster_name, cluster_data in best_model_results_data.items():
+        best_model_clusters_data[cluster_name] = []
+        for model_name, model_data in cluster_data.items():
+            model_data.pop('best_param', None)  # Remove 'best_param' from model data
+            best_model_clusters_data[cluster_name].append({
+                'model_name': model_name,
+                'model_scores': model_data  # Assuming this includes scores like accuracy, recall, etc.
+            })
+
+    results = get_training_results()
+    
+    # Return the updated template
+    return templates.TemplateResponse("training_report.html", {
+        "request": request,
+        "results": results,
+        "validation_summary": validation_summary,
+        "validation_status_reasons": validation_status_reasons,
+        "preprocessing_summary": preprocessing_summary,
+        "clusters_data": clusters_data,  # This contains dynamic cluster and model data
+        "best_model_clusters_data": best_model_clusters_data,
+        "eda_url": "/static/eda.html",
+        "datadrift_url": "/static/datadrift.html",
+        "hide_validation_report": hide_validation_report
+    })
 ## training related----end here----
 
 

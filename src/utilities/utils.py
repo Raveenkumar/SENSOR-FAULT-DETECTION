@@ -15,7 +15,7 @@ from sklearn.base import BaseEstimator
 from src.logger import logger
 from mypy_boto3_s3.service_resource import Bucket,S3ServiceResource 
 from src.exception import SensorFaultException
-from src.entity.config_entity import BaseArtifactConfig,ModelTrainerConfig,ModelTunerConfig
+from src.entity.config_entity import BaseArtifactConfig,ModelTrainerConfig,ModelTunerConfig,DataIngestionConfig
 from src.entity.artifact_entity import ModelTunerArtifacts
 
 
@@ -591,6 +591,7 @@ def models_auc_threshold_satisfied() -> bool:
 def clear_artifact_folder():
     try:
         shutil.rmtree(Path(BaseArtifactConfig.artifact_dir))
+        shutil.rmtree(Path(DataIngestionConfig.training_batch_files_folder_path))
         logger.info(f"clear_artifact_folder :: Status:Success")
         
     except Exception as e:
