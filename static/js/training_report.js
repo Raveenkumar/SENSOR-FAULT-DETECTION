@@ -20,7 +20,8 @@ window.onload = function () {
     if (document.getElementById('remainingPreprocessingPlot') !== null) {
         createRemainingPreprocessingPlot(window.preprocessing_summary.total_columns, {
             zero_std_columns: window.preprocessing_summary.zero_std_columns,
-            nan_contains_columns: window.preprocessing_summary.nan_contains_columns,
+            high_nan_columns_dropped : window.preprocessing_summary.high_nan_columns_dropped,
+            nan_imputed_columns: window.preprocessing_summary.nan_imputed_columns,
             highskew_columns: window.preprocessing_summary.highskew_columns,
             outlier_columns: window.preprocessing_summary.outlier_columns
         });
@@ -163,16 +164,17 @@ function createRemainingPreprocessingPlot(totalColumns, data) {
     charts['remainingPreprocessingPlot'] = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Zero Std Columns', 'NaN Contains Columns', 'High Skew Columns', 'Outlier Columns'],
+            labels: ['Zero Std Columns', 'High NAN Dropped Columns','NAN Imputed Columns', 'High Skew Columns', 'Outlier Columns'],
             datasets: [{
                 label: 'Total Columns: ' + totalColumns,
                 data: [
                     data.zero_std_columns,
-                    data.nan_contains_columns,
+                    data.high_nan_columns_dropped,
+                    data.nan_imputed_columns,
                     data.highskew_columns,
                     data.outlier_columns
                 ],
-                backgroundColor: ['#FF5733', '#33C3FF', '#FFC300', '#DAF7A6'],
+                backgroundColor: ['#4CAF50', '#FF5733', '#33C3FF', '#FFB3BA', '#B2FF59'],
                 borderColor: '#333',
                 borderWidth: 1
             }]

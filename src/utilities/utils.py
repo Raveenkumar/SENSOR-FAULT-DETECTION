@@ -201,7 +201,7 @@ def append_log_to_excel(filename:str, status:str, status_reason: str, remark:str
         # Style the Excel file
         style_excel(excel_filename)
         # logger.info(f"File:log_file.xlsx Data added :: Status:Successful :: Data:{new_df.to_dict()}")
-        logger.info("File:log_file.xlsx :: Status:Data added")
+        logger.info(f"append_log_to_excel :: file_name:{excel_filename} :: Status:Data added")
     except FileNotFoundError:
         # If the file does not exist, create a new Excel file with slno starting from 1
         new_data = {
@@ -217,9 +217,9 @@ def append_log_to_excel(filename:str, status:str, status_reason: str, remark:str
         
         # Style the Excel file
         style_excel(excel_filename)
-        logger.info("File:log_file.xlsx  :: Status:created")
+        logger.info(f"append_log_to_excel :: file_name:{excel_filename} :: Status:Created")
         # logger.info(f"File:log_file.xlsx Data added :: Status:Successful :: Data:{new_df.to_dict()}")
-        logger.info("File:log_file.xlsx :: Status:Data added")
+        logger.info(f"append_log_to_excel :: file_name:{excel_filename} :: Status:Data added")
 
 def format_as_s3_path(path:Path) -> str:
     """format_as_s3_path :Used for convert path to s3_path format
@@ -388,6 +388,7 @@ def save_models_data(all_model_objects_path:Path,
         error_message: Custom Exception
     """
     try:
+        logger.info(f'save_models_data:: create folder for all_model_objects_path,best_model_object_path if not exist:{all_model_objects_path,best_model_object_path}')
         create_folder_using_folder_path(all_model_objects_path)
         create_folder_using_folder_path(best_model_object_path)
                 
@@ -405,10 +406,12 @@ def save_models_data(all_model_objects_path:Path,
             final_file_path = all_model_file_path
             
             #save model object
+            logger.info(f"save_models_data :: saved the model {file_name} into {all_model_objects_path}")
             save_obj(final_file_path,model_obj)
             
         final_path = os.path.dirname(final_file_path)
-        json_file_path = Path(os.path.join(final_path,ModelTrainerConfig.all_model_result_json_file_name)) 
+        json_file_path = Path(os.path.join(final_path,ModelTrainerConfig.all_model_result_json_file_name))
+        logger.info(f"save_models_data :: saved the model json data {ModelTrainerConfig.all_model_result_json_file_name} into {final_path}") 
         save_json(json_file_path,all_models_data[1])   
             
         
@@ -426,9 +429,11 @@ def save_models_data(all_model_objects_path:Path,
         best_model_results = best_model_data[1]
         
         #save model object
+        logger.info(f"save_models_data :: saved the best model {file_name} into {best_model_object_path}")
         save_obj(final_file_path,best_model_obj)
         final_path = os.path.dirname(final_file_path)
         json_file_path = Path(os.path.join(final_path,ModelTrainerConfig.best_model_json_file_name)) 
+        logger.info(f"save_models_data :: saved the best model json data {ModelTrainerConfig.best_model_json_file_name} into {final_path}")
         save_json(json_file_path,best_model_results)   
  
     except Exception as e:
@@ -597,4 +602,16 @@ def clear_artifact_folder():
     except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"clear_artifact_folder :: Status:Failed :: error_message:{error_message}")
-            raise error_message             
+            raise error_message  
+
+def remove_file(file_path:Path):
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            logger.info(f"remove_file :: deleted training validation file :: file_path : {file_path}")
+        
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"clear_artifact_folder :: Status:Failed :: error_message:{error_message}")
+            raise error_message
+                       

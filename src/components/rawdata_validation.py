@@ -6,7 +6,8 @@ from src.utilities.utils import (read_json,read_csv_file,
                                  append_log_to_excel,
                                  create_folder_using_file_path,
                                  create_folder_using_folder_path,copy_file,
-                                 create_zip_from_folder)
+                                 create_zip_from_folder,
+                                 save_json)
 from src.logger import logger
 from src.exception import SensorFaultException
 import pandas as pd
@@ -193,15 +194,7 @@ class RawDataValidation:
         except Exception as e:
             logger.error(msg=SensorFaultException(error_message=str(e),error_detail=sys))
             raise SensorFaultException(error_message=e,error_detail=sys)
-    
-    def check_datadrift(self,purpose,current_data,reference_data ):
-        try:
-            pass
-        except Exception as e:
-            # logger.error(e)
-            logger.error(msg=SensorFaultException(error_message=str(e),error_detail=sys))
-            raise SensorFaultException(error_message=e,error_detail=sys)        
-    
+                     
     def initialize_rawdata_validation_process(self) -> RawDataValidationArtifacts:
         """initialize_rawdata_validation_process :Used for start the raw validation process
 
@@ -214,6 +207,7 @@ class RawDataValidation:
         try:
             logger.info("started the raw data validation process!")
             # create folder for needed
+            logger.info(f"create folders for storing good raw data,bad raw data,validation report if not exist")
             create_folder_using_folder_path(self.good_raw_data_path)
             create_folder_using_folder_path(self.bad_raw_data_path)
             create_folder_using_file_path(self.validation_report_file_path)
@@ -244,12 +238,18 @@ class RawDataValidation:
                 # If all validations pass, move to good_raw_folder
                 shutil.move(src=file_path, dst=self.good_raw_data_path)
             
+            #for validation report show only default training
+            test_data = {"Dashboard":"show_validation_report"}
+            save_json(self.config.dashboard_validation_show,test_data)
             # copy validation report file to data folder 
+            logger.info(f"initialize_rawdata_validation_process :: copy the validation file into data folder for report")
             copy_file(self.validation_report_file_path,self.dashboard_validation_report_file_path)
             
-            # zip the bad raw data
-            create_zip_from_folder(self.bad_raw_data_path,self.config.dashboard_bad_raw_zip_file_path)
-            
+            # zip the bad raw data only prediction
+            if self.bad_raw_data_path == PredictionRawDataValidationConfig.bad_raw_data_folder_path:
+                logger.info(f"initialize_rawdata_validation_process :: zip the bad data files for providing")
+                create_zip_from_folder(self.bad_raw_data_path,self.config.dashboard_bad_raw_zip_file_path)
+                
             result = RawDataValidationArtifacts(good_raw_data_folder=self.good_raw_data_path,
                                                 bad_raw_data_folder=self.bad_raw_data_path,
                                                 validation_log_file_path=self.validation_report_file_path)

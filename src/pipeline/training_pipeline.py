@@ -12,7 +12,7 @@ from src.entity.config_entity import (DataIngestionConfig,
                                       ModelTrainerConfig,
                                       S3Config,)
 from src.entity.artifact_entity import RawDataValidationArtifacts
-from src.utilities.utils import read_json,read_csv_file 
+from src.utilities.utils import read_json,read_csv_file,remove_file
 from src.logger import logger
 from src.exception import SensorFaultException
 from src.components.rawdata_validation import RawDataValidation
@@ -51,6 +51,10 @@ class TrainingPipeline:
             
             status,files_path = get_training_data.initialize_getting_training_data_process()
             logger.info(msg=f"Folder Path:{files_path}")
+            
+            # remove the data/training_validation_file if status is training <no need to validation>
+            remove_file(self.rawdata_validation_config.dashboard_validation_show)
+            
             if status=="default_training":
                 raw_data_validation = RawDataValidation(self.rawdata_validation_config,folder_path=files_path)
                 raw_data_validation_artifacts = raw_data_validation.initialize_rawdata_validation_process()

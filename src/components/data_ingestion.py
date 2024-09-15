@@ -110,6 +110,7 @@ class GetTrainingData:
             Path: Path
         """
         try:
+            logger.info(f"files_store_in_local_path:: create folder for storing cloud training files into local")
             create_folder_using_folder_path(self.data_ingestion_config.training_batch_files_folder_path)
             self.s3_obj.download_files_from_s3(bucket_obj=self.s3_bucket_obj,
                                                local_folder_path=self.data_ingestion_config.training_batch_files_folder_path,

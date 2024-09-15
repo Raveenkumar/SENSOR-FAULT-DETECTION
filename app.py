@@ -7,7 +7,11 @@ from pathlib import Path
 import pandas as pd
 from uvicorn import run as app_run
 from src.constants import APP_HOST, APP_PORT
-from src.entity.config_entity import PredictionRawDataValidationConfig,BaseArtifactConfig,S3Config
+from src.entity.config_entity import (TrainingRawDataTransformationConfig,
+                                      PredictionRawDataValidationConfig,
+                                      BaseArtifactConfig,
+                                      PreprocessorConfig,
+                                      ModelTrainerConfig)
 from src.entity.artifact_entity import RawDataTransformationArtifacts
 from src.logger import logger
 from src.pipeline.train_models import  get_training_results
@@ -75,6 +79,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
 # Training status and pipeline objects
 training_status = {"completed": False}
 upload_status = {"completed": False}
+
 training_pipeline = TrainingPipeline()
 
 async def train_model():
@@ -82,21 +87,27 @@ async def train_model():
     training_pipeline.initialize_pipeline()
     training_status["completed"] = True
     
-async def upload_data_to_s3():
+async def sync_s3_and_save_model_data():
     if not upload_status["completed"]:
         # Only upload if it hasn't been completed before
         try:
+            logger.info("start uploading data into cloud!")
             local_artifact_folder_path = BaseArtifactConfig.artifact_dir
             s3_bucket = training_pipeline.s3_bucket_obj
+            logger.info("storing artifact data into cloud")
             training_pipeline.s3.upload_folder_to_s3(bucket_obj=s3_bucket, local_folder_path=local_artifact_folder_path)
-            
+            logger.info("storing validated file into cloud")
             local_training_files_path = training_pipeline.rawdata_transformation_config.merge_file_path
             s3_training_files_path = training_pipeline.s3_config.training_files_path
             training_pipeline.s3.upload_files_to_s3(bucket_obj=s3_bucket, 
                                                     local_folder_path=local_training_files_path, 
                                                     s3_subfolder_path=s3_training_files_path)
             
+            logger.info('Start the store models in prediction models')
             training_pipeline.s3.store_prediction_models()
+            logger.info('Start the store models in prediction models')
+            logger.info("End uploading data into cloud!")
+            
             clear_artifact_folder()
             
             upload_status["completed"] = True  # Mark upload as completed
@@ -113,28 +124,38 @@ async def train_route(request: Request, background_tasks: BackgroundTasks):
 @app.get("/training_results")
 async def get_training_results_route(request: Request, background_tasks: BackgroundTasks):
     # Load Excel data for plots
-    validation_data = pd.read_excel('./data/training_validation_logs.xlsx')
-    preprocessing_data = pd.read_excel('./data/preprocessing_report.xlsx')
-    all_model_results_data = read_json('./data/ALL_models_result.json') # type: ignore
-    best_model_results_data = read_json('./data/best_model_result.json') # type: ignore
-
-    # Determine if 'final_file.csv' is used
-    file_counts = validation_data['FILENAME'].value_counts().to_dict()
-    hide_validation_report = 'final_file.csv' in file_counts and file_counts['final_file.csv'] > 0
-
+    hide_validation_report = False
+    if training_status["completed"] and not upload_status["completed"]:
+        background_tasks.add_task(sync_s3_and_save_model_data)
+          
+    if os.path.exists(TrainingRawDataTransformationConfig.dashboard_validation_show):    
+        hide_validation_report = True
+        
+    validation_data = pd.read_excel(TrainingRawDataTransformationConfig.dashboard_validation_report_file_path)
     # Process validation data for plots
-    validation_summary = validation_data['STATUS'].value_counts().to_dict()
+    validation_sub_d = validation_data['STATUS'].value_counts().to_dict()
+    no_of_files = validation_data['FILENAME'].nunique()
+    validation_sub_d['Passed'] = no_of_files - validation_sub_d['Failed'] # passed validation will count more in validation report
+    validation_summary = validation_sub_d
     validation_status_reasons = validation_data[validation_data['STATUS'] == 'Failed']['STATUS_REASON'].value_counts().to_dict()
+    
+            
+    preprocessing_data = read_json(PreprocessorConfig.dashboard_preprocessor_json_file_path)
+    all_model_results_data = read_json(ModelTrainerConfig.final_all_model_results_json_file_path) 
+    best_model_results_data = read_json(ModelTrainerConfig.final_best_model_results_json_file_path) 
+
+    
 
     # Process Preprocessing Summary for multiple plots
     preprocessing_summary = {
-        "total_columns": int(preprocessing_data['total_columns'].sum()),
-        "total_records": int(preprocessing_data['total_records'].sum()),
-        "no_of_duplicate_rows": int(preprocessing_data['no_of_duplicate_rows'].sum()),
-        "zero_std_columns": int(preprocessing_data['zero_std_columns'].sum()),
-        "nan_contains_columns": int(preprocessing_data['nan_contains_columns'].sum()),
-        "highskew_columns": int(preprocessing_data['highskew_columns'].sum()),
-        "outlier_columns": int(preprocessing_data['outlier_columns'].sum())
+        "total_columns": preprocessing_data["total_columns"],
+        "total_records":  preprocessing_data["total_records"],
+        "no_of_duplicate_rows": preprocessing_data["no_of_duplicate_rows"],
+        "zero_std_columns": preprocessing_data["zero_std_columns"],
+        "high_nan_columns_dropped": preprocessing_data["hight_nan_columns_dropped"],
+        "nan_imputed_columns": preprocessing_data["Nan_imputed_columns"],
+        "highskew_columns": preprocessing_data["highskew_columns"],
+        "outlier_columns": preprocessing_data["outlier_handled_columns"]
     }
     
     # all models_data_cluster_wise
@@ -156,7 +177,7 @@ async def get_training_results_route(request: Request, background_tasks: Backgro
             model_data.pop('best_param', None)  # Remove 'best_param' from model data
             best_model_clusters_data[cluster_name].append({
                 'model_name': model_name,
-                'model_scores': model_data  # Assuming this includes scores like accuracy, recall, etc.
+                'model_scores': dict(model_data)  # Assuming this includes scores like accuracy, recall, etc.
             })
 
     results = get_training_results()

@@ -187,7 +187,7 @@ class SimpleStorageService:
                 
                 self.download_file_from_s3(bucket_obj=bucket_obj,local_file_path=local_file_path,s3_file_path=file_path)
                 
-            logger.info(msg=f"download_files_from_s3 :: Status: Successful :: Bucket_Obj:{bucket_obj} :: s3_folder_path:{s3_subfolder_path} :: local_folder_path:{local_folder_path} ")
+            # logger.info(msg=f"download_files_from_s3 :: Status: Successful :: Bucket_Obj:{bucket_obj} :: s3_folder_path:{s3_subfolder_path} :: local_folder_path:{local_folder_path} ")
             
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -229,7 +229,7 @@ class SimpleStorageService:
                     target_folder_path = self.config.champion_folder_path
                 else:
                     target_folder_path = self.config.challenger_folder
-                    
+            logger.info(f'Copy the models data from:{self.config.models_source_path} to:{target_folder_path}')        
             # check source path exist or not
             if self.check_s3_subfolder_exists(bucket_obj,self.config.models_source_path):
                 for obj in bucket_obj.objects.filter(Prefix=self.config.models_source_path):

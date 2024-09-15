@@ -44,6 +44,7 @@ EXPERIMENT_FOLDER_NAME:str = "experiment_model_data"
 STABLE_FOLDER_NAME:str = "stable_model_data"
 PREPROCESSOR_FOLDER_NAME:str = "preprocessor_stage_one"
 PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.dill"
+PREPROCESSOR_JSON_FILE_NAME:str = "preprocessing_report.json"
 
 # cluster constants
 CLUSTER_COLUMN_NAME:str = "Cluster"

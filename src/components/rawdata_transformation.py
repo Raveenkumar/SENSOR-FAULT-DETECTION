@@ -124,6 +124,7 @@ class RawDataTransformation:
         try:
             logger.info("started the raw data transformation process!")
             # create merge_folder
+            logger.info('crate folder for store transformed input file ')
             create_folder_using_file_path(self.merge_file_path)
             
             merge_df = self.convert_good_raw_into_single_file(self.raw_data_folder)

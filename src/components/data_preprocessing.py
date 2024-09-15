@@ -5,13 +5,14 @@ from sklearn.preprocessing import PowerTransformer
 from sklearn.impute import KNNImputer
 from src.exception import SensorFaultException
 from src.logger import logger
-from src.entity.config_entity import PreprocessorConfig
+from src.entity.config_entity import PreprocessorConfig,BaseArtifactConfig
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
-from src.utilities.utils import create_folder_using_file_path,save_obj,find_final_path
+from src.utilities.utils import create_folder_using_file_path,save_obj,save_json,copy_file
 from src.entity.artifact_entity import PreprocessorArtifacts
 
 
+preprocessing_results = {}
 
 class Preprocessor:
     def __init__(self,config:PreprocessorConfig, input_file:pd.DataFrame) -> None:
@@ -31,6 +32,8 @@ class Preprocessor:
             pd.DataFrame: clean dataframe
         """
         try:
+            preprocessing_results["total_records"] = df.shape[0]
+            preprocessing_results["total_columns"] = df.shape[1]
             dropped_columns = self.config.unwanted_columns_list
             df.drop(columns=dropped_columns, inplace=True)
             logger.info(f'Dropped columns :: Status: Success :: dropped_columns:{dropped_columns}')
@@ -57,6 +60,7 @@ class Preprocessor:
             df.drop_duplicates(inplace=True)
             after_shape = df.shape
             no_of_dropped_rows = before_shape[0]-after_shape[0]
+            preprocessing_results['no_of_duplicate_rows']=no_of_dropped_rows
             logger.info(f'Dropped Duplicate rows :: Status: Success :: no_of_rows_dropped:{no_of_dropped_rows}')
             return df
         
@@ -75,9 +79,10 @@ class Preprocessor:
         def fit(self,X,y=None):
             try:
                 self.zero_std_columns = [column for column in X.columns if X[column].std() == 0]
+                preprocessing_results['zero_std_columns'] = int(len(self.zero_std_columns))
                 if self.config.target_feature in self.zero_std_columns:
                     self.zero_std_columns.remove(self.config.target_feature)
-                logger.info("DropZeroStdColumns  fitted successfully.")  
+                logger.info(f"DropZeroStdColumns  fitted successfully.")  
 
             except Exception as e:
                 logger.error(f"An error occurred during fitting: {e}")
@@ -89,7 +94,7 @@ class Preprocessor:
         def transform(self, X, y=None):
             try:
                 X = X.drop(columns=self.zero_std_columns)
-                logger.info("DropZeroStdColumns columns transform successfully.")
+                logger.info(f"DropZeroStdColumns columns transform successfully :: zero_std_columns:{self.zero_std_columns}")
 
             except Exception as e:
                 logger.error(f"An error occurred during Transform: {e}")
@@ -122,10 +127,10 @@ class Preprocessor:
             try:
                 high_skew_columns = X.columns[(X.skew() < -1) | (X.skew() > 1)]
                 self.skewed_columns = list(high_skew_columns)
+                preprocessing_results['highskew_columns']= int(len(self.skewed_columns))
                 if self.config.target_feature in self.skewed_columns:
                     self.skewed_columns.remove(self.config.target_feature) 
-                logger.info(f"Getting high skew columns : {self.skewed_columns}")
-
+                
                 self.power_transformation.fit(X[self.skewed_columns])
                 logger.info("HandleHighSkewColumns PowerTransformer  fitted successfully.")  
 
@@ -139,8 +144,8 @@ class Preprocessor:
         def transform(self, X, y=None):
             try:
                 X[self.skewed_columns] = self.power_transformation.transform(X[self.skewed_columns])
-                logger.info("Handle high skew columns transform successfully")
-
+                logger.info(f"Handle high skew columns transform successfully :: total_skew_columns:{len(self.skewed_columns)} :: skew_columns:{self.skewed_columns}  ")
+                
             except Exception as e:
                 logger.error(f"An error occurred during Transform: {e}")
                 raise e
@@ -171,11 +176,14 @@ class Preprocessor:
             try:
                 # Determine which columns to drop based on training data
                 self.columns_to_drop = X.columns[X.isnull().mean() * 100 > 50].tolist()
-                logger.info(f"Columns to drop due to high NaN percentage: {self.columns_to_drop}")
+                self.nan_imputed_columns = X.columns[X.isnull().mean() * 100 < 50].tolist()
+                preprocessing_results['hight_nan_columns_dropped'] = int(len(self.columns_to_drop))
+                preprocessing_results['Nan_imputed_columns'] = int(len(self.nan_imputed_columns))
+                
                 
                 # Prepare data for imputation by dropping the columns
                 X_to_impute = X.drop(columns=self.columns_to_drop, errors='ignore')
-                
+
                 # Fit the KNN imputer on the remaining data
                 self.knn_imputer.fit(X_to_impute)
                 logger.info("handle nan values KNN Imputer fitted successfully.")
@@ -190,12 +198,14 @@ class Preprocessor:
             try:
                 # Drop columns that were determined during fit
                 X = X.drop(columns=self.columns_to_drop, errors='ignore')
+                logger.info(f"Columns to drop due to high NaN percentage: {self.columns_to_drop}")
                 # logger.info(f"handle nan values Applied column dropping. Remaining columns: {X.columns.tolist()}")
                 
                 # Apply KNN imputation using the fitted imputer
                 imputed_data = self.knn_imputer.transform(X)
                 result_df = pd.DataFrame(imputed_data, columns=X.columns)
-                logger.info("handle nan values Data transformed using KNN Imputer.")
+                
+                logger.info(f"handle nan values imputed using KNN Imputer. total_imputed_columns:{len(self.nan_imputed_columns)} :: columns_list:{self.nan_imputed_columns}")
             
             except Exception as e:
                 logger.error(f"An error occurred during transformation: {e}")
@@ -233,8 +243,7 @@ class Preprocessor:
                         IQR = upper_bound - lower_bound
                         self.lower_limits[column] = lower_bound - (IQR * self.config.iqr_multiplier)
                         self.upper_limits[column] = upper_bound + (IQR * self.config.iqr_multiplier)
-                        
-
+                    
                 logger.info(f"OutlierHandler Fitted successfully ")
                 logger.info(f"Lower_limits:{self.lower_limits}")
                 logger.info(f"Upper_limits:{self.upper_limits}")
@@ -247,19 +256,29 @@ class Preprocessor:
 
         def transform(self, X, y=None):
             try:
-                # Clip the values based on the calculated limits instead of removing rows
+                # Clip the values based on the calculated limits
+                count_clipped_columns = 0  # Counter for how many columns had outliers clipped
+                clipped_columns = []       # List to track clipped column names
+
                 for column in X.columns:
-                    if column != PreprocessorConfig.target_feature:
+                    if column != self.config.target_feature:
+                        original_data = X[column].copy()  # Backup original data to compare later
                         X[column] = X[column].clip(lower=self.lower_limits[column], upper=self.upper_limits[column])
 
+                        # Check if the column had any values clipped
+                        if not original_data.equals(X[column]):
+                            count_clipped_columns += 1
+                            clipped_columns.append(column)
 
-                logger.info(f"OutlierHandler Transformed successfully ")
-                        
-                        
+                preprocessing_results["outlier_handled_columns"] = count_clipped_columns
+                # preprocessing_results["clipped_columns"] = clipped_columns  # Optional: Store names of clipped columns
+                
+                logger.info(f"OutlierHandler transformed successfully :: total_columns_clipped: {count_clipped_columns} :: clipped columns: {clipped_columns}")
+
             except Exception as e:
                 logger.error(f"An error occurred during transform: {e}")
                 raise e
-            
+
             return X
 
         def fit_transform(self, X, y=None):
@@ -299,9 +318,15 @@ class Preprocessor:
             final_preprocessor_object_path = self.config.preprocessor_object_path
             create_folder_using_file_path(file_path=final_preprocessor_object_path)
             save_obj(file_path=final_preprocessor_object_path,obj=preprocessing_pipeline)   
-                
-            
             result = PreprocessorArtifacts(preprocessed_data=preprocessed_data,preprocessed_object_path=final_preprocessor_object_path)   # type: ignore
+            
+            # save the results into json for plotting
+            logger.info('initialize_preprocessing :: create folder for preprocessing json file if not exist')
+            create_folder_using_file_path(self.config.preprocessor_json_file_path)
+            save_json(self.config.preprocessor_json_file_path,preprocessing_results)
+            #copy file to data dir
+            copy_file(self.config.preprocessor_json_file_path,BaseArtifactConfig.data_dir)
+            
             logger.info("Ended the initialize_preprocessing process!")
             return result
         

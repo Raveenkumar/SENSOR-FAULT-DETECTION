@@ -39,7 +39,7 @@ class ModelTrainer:
                 y = cluster_data[PreprocessorConfig.target_feature]
                 
                 model_tuner_artifacts = self.model_tuner.initialize_model_tuner_process(X,y)
-                logger.info("MODEL TUNER ARTIFACTS: {model_tuner_artifacts}")
+                logger.info(f"MODEL TUNER ARTIFACTS: {model_tuner_artifacts}")
                 
                 # exp_all_models_path = self.config.experiment_all_model_objects_path / str(cluster)
                 # exp_best_models_path = self.config.experiment_best_model_object_path / str(cluster)
@@ -56,11 +56,11 @@ class ModelTrainer:
                 all_models_results_cluster_wise[f"Cluster:{cluster}"] = model_tuner_artifacts.all_models_data[1]
                 best_models_results_cluster_wise[f"Cluster:{cluster}"] = model_tuner_artifacts.best_model_data[1]
                 
-            
+            logger.info(f"initialize_model_trainer :: convert the data into df for excel data ")
             all_models_result_df =  proper_conversion_for_excel_file(all_models_results_cluster_wise)
             best_models_result_df =  proper_conversion_for_excel_file(best_models_results_cluster_wise)
             
-            # create folder 
+            logger.info(f"initialize_model_trainer :: create folders for storing cluster wise models results (all_model_results,best_model_results)")
             create_folder_using_file_path(self.config.all_model_results_excel_file_path)
             create_folder_using_file_path(self.config.all_model_results_json_file_path)
             # create_folder_using_file_path(self.config.best_model_results_excel_file_path)
@@ -69,11 +69,15 @@ class ModelTrainer:
             # create_folder_using_file_path(self.config.stable_standard_scalar_path)
                         
             # save the data into excel file
+            logger.info(f"initialize_model_trainer :: save the all_model_results into excel")
             save_model_result_excel(all_models_result_df,self.config.all_model_results_excel_file_path)   
+            logger.info(f"initialize_model_trainer :: save the all_model_results into json")
             save_json(self.config.all_model_results_json_file_path,all_models_results_cluster_wise)
             
             # save the best models data
-            save_model_result_excel(best_models_result_df,self.config.best_model_results_excel_file_path)   
+            logger.info(f"initialize_model_trainer :: save the best_model_results into excel")
+            save_model_result_excel(best_models_result_df,self.config.best_model_results_excel_file_path) 
+            logger.info(f"initialize_model_trainer :: save the best_model_results into json")  
             save_json(self.config.best_model_results_json_file_path,best_models_results_cluster_wise)
             
             #save preprocessor stage two  objects(preprocessor,smote,pca)
@@ -91,15 +95,18 @@ class ModelTrainer:
             final_smote_path = self.config.smote_path
             final_pca_path = self.config.pca_path
             
+            logger.info(f"initialize_model_trainer :: create folders for storing preprocessing_stage_two objects(scalar,smote,pca)")
             create_folder_using_file_path(final_standard_scalar_path)
             create_folder_using_file_path(final_smote_path)
             create_folder_using_file_path(final_pca_path)
             
+            logger.info(f"initialize_model_trainer :: storing preprocessing_stage_two objects(scalar,smote,pca)")
             save_obj(file_path=final_standard_scalar_path,obj=model_tuner_artifacts.standard_scalar_object)
             save_obj(file_path=final_smote_path,obj=model_tuner_artifacts.smote_object)
             save_obj(file_path=final_pca_path,obj=model_tuner_artifacts.pca_object)
             
             # copy files models results json files
+            logger.info(f'copy files to data folder for training results')
             copy_file(self.config.all_model_results_json_file_path,BaseArtifactConfig.data_dir)
             copy_file(self.config.best_model_results_json_file_path,BaseArtifactConfig.data_dir)
             

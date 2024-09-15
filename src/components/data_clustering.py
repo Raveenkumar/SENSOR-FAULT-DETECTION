@@ -64,7 +64,9 @@ class Clusters:
             cluster_labels = kmeans.fit_predict(X)
             # final_cluster_object_path = find_final_path(self.config.experiment_cluster_object_path,self.config.stable_cluster_object_path)
             final_cluster_object_path = self.config.cluster_object_path
+            logger.info(f'find_cluster_labels:: create folder for cluster object storing if not exist')
             create_folder_using_file_path(file_path=final_cluster_object_path)
+            logger.info(f'find_cluster_labels:: storing the cluster obj')
             save_obj(file_path=final_cluster_object_path,obj=kmeans)
             
             logger.info(f"n_clusters :: Status:Success ")
