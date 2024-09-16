@@ -1,14 +1,11 @@
 import os
 import sys
 import logging
-from datetime import datetime
+from src.entity.config_entity import LogValidationConfig
 
-
-LOG_FILE = f"{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.log"
 logging_str = "[%(asctime)s: %(levelname)s: %(module)s: %(message)s]"
-log_dir = "logs"
-
-log_filepath = os.path.join(log_dir,LOG_FILE)
+log_dir = LogValidationConfig.log_folder_path
+log_filepath = LogValidationConfig.log_file_path
 os.makedirs(log_dir, exist_ok=True)
 
 

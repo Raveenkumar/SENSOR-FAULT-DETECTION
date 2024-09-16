@@ -23,4 +23,7 @@ jinja2
 python-multipart
 python-box
 openpyxl
+python-dotenv
 # -e .
+kneed
+mlflow

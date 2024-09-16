@@ -182,3 +182,12 @@ artifacts/
 src/training_pipeline.py
 static/datadrift.html
 static/eda.html
+notebook/training_file_data/
+
+
+# change need
+notebook/
+src/pipeline/train_models.py
+cluster_data.csv
+db_folder_structure/
+mlruns/

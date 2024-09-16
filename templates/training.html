@@ -15,9 +15,22 @@
     </div>
 
     <script>
-        setTimeout(() => {
-            window.location.href = "/training_results"; // Redirect to the training results page after some time
-        }, 10000); // Adjust time as needed
+        async function checkTrainingStatus() {
+            try {
+                const response = await fetch("/training_results");
+                if (response.status === 200) {
+                    window.location.href = "/training_results";
+                } else {
+                    // Keep checking every 5 seconds
+                    setTimeout(checkTrainingStatus, 5000);
+                }
+            } catch (error) {
+                console.error('Error checking training status:', error);
+            }
+        }
+
+        // Start polling immediately
+        checkTrainingStatus();
     </script>
 </body>
 </html>
