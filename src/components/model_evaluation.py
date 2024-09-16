@@ -21,8 +21,10 @@ class ModelEvaluation:
             error_message: Custom Exception
         """
         try:
+            logger.info(f"Log into Mlflow :: experiment_name:{self.config.mlflow_experiment_name} :: MLFLOW URI:{self.config.mlflow_uri}")
             mlflow.set_experiment(experiment_name=self.config.mlflow_experiment_name)
             mlflow.set_registry_uri(self.config.mlflow_uri)                                            # type: ignore
+            
             
             for cluster_model_name, model_data in self.mlflow_data_dict.items():
                 with mlflow.start_run(run_name=cluster_model_name):
