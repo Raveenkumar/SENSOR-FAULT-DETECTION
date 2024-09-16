@@ -4,12 +4,12 @@ import json
 import zipfile
 import shutil,dill
 import os,sys
-from typing import Any
+from typing import Dict, Any
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
 from datetime import datetime
-from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score,classification_report
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.base import BaseEstimator
 from src.logger import logger
@@ -314,7 +314,7 @@ def load_obj(file_path:Path)-> object:
         logger.error(f"load object   ::  Status:Failed :: Error:{error_message}")
         raise error_message    
      
-def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFrame,y_train:pd.DataFrame,y_test:pd.DataFrame)-> tuple[BaseEstimator,dict[str, Any]]:
+def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFrame,y_train:pd.DataFrame,y_test:pd.DataFrame)-> tuple[dict[str, Any],BaseEstimator,dict[str, Any]]:
     """model_result :Used for store model result data in dict format
 
     Args:
@@ -328,10 +328,25 @@ def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFra
         error_message: Custom Exception
 
     Returns:
-       tuple[RandomizedSearchCV,dict[str, Any]]: model,results
+       tuple[dict[str, Any],RandomizedSearchCV,dict[str, Any]]: mlflow_dict, model,results
     """
     try: 
         y_pred = model.predict(X_test)  
+        
+        classification_report_ :Dict[str, Dict[str, Any]]=  classification_report( y_test,y_pred,output_dict=True) # type: ignore
+        logger.info(f'Classification_report: {classification_report_}')
+        mlflow_dict = {"model": model.best_estimator_,
+                        "param" : model.best_params_,
+                        'training_score': model.score(X_train, y_train),
+                        'test_score': model.score(X_test, y_test), 
+                        'auc_score': roc_auc_score(y_test, y_pred),
+                        "overall_recall_score" : recall_score(y_test, y_pred, zero_division=0),
+                        "recall_1": classification_report_['1.0']['recall'] ,
+                        "recall_0": classification_report_['0.0']['recall'],
+                        "overall_precision" : precision_score(y_test, y_pred, zero_division=0),
+                        "precision_1": classification_report_['1.0']['precision'] ,
+                        "precision_0": classification_report_['0.0']['precision']
+                    }
         
         result_dict = {
             'best_param': model.best_params_,
@@ -346,7 +361,7 @@ def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFra
         
         logger.info(f"model_result: {result_dict}")
         
-        return model.best_estimator_, result_dict
+        return mlflow_dict, model.best_estimator_, result_dict
     
     except Exception as e:
         error_message = SensorFaultException(error_message=str(e),error_detail=sys)

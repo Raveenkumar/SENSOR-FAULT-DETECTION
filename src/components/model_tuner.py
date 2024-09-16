@@ -72,7 +72,7 @@ class ModelTuner:
             logger.error(msg=f"model_build :: Status:Failed :: Error:{error_message}")
             raise error_message
     
-    def get_best_svc_parameters(self,X:pd.DataFrame, y:pd.Series)-> tuple[BaseEstimator,dict[str, Any]]:
+    def get_best_svc_parameters(self,X:pd.DataFrame, y:pd.Series)-> tuple[dict[str, Any],BaseEstimator,dict[str, Any]]:
         """get_best_svc_parameters : Used for find best parameters in SVC
 
         Args:
@@ -83,7 +83,7 @@ class ModelTuner:
             error_message: Custom Exception
 
         Returns:
-            tuple[BaseEstimator,dict[str, Any]]: model_obj,result_dict = {
+            tuple[dict[str, Any], BaseEstimator,dict[str, Any]]: mlflow_dict, model_obj,result_dict = {
                 'best_param': model.best_estimator_,
                 'training_score': model.score(X_train, y_train),
                 'test_score': model.score(X_test, y_test), 
@@ -109,7 +109,7 @@ class ModelTuner:
             logger.error(msg=f"get_best_svc_parameters :: Status:Failed :: Error:{error_message}")
             raise error_message
     
-    def get_best_gaussiannb_parameters(self,X:pd.DataFrame, y:pd.Series)-> tuple[BaseEstimator,dict[str, Any]]:
+    def get_best_gaussiannb_parameters(self,X:pd.DataFrame, y:pd.Series)-> tuple[dict[str, Any],BaseEstimator,dict[str, Any]]:
         """get_best_gaussiannb_parameters : Used for find best parameters in GaussianNB
 
         Args:
@@ -120,7 +120,7 @@ class ModelTuner:
             error_message: Custom Exception
 
         Returns:
-            tuple[BaseEstimator,dict[str, Any]]: model_obj,result_dict = {
+            tuple[dict[str, Any],BaseEstimator,dict[str, Any]]: model_obj,result_dict = {
                 'best_param': model.best_estimator_,
                 'training_score': model.score(X_train, y_train),
                 'test_score': model.score(X_test, y_test), 
@@ -148,7 +148,7 @@ class ModelTuner:
             logger.error(msg=f"get_best_gaussiannb_parameters :: Status:Failed :: Error:{error_message}")
             raise error_message
     
-    def get_best_randomforest_parameters(self,X:pd.DataFrame, y:pd.Series)-> tuple[BaseEstimator,dict[str, Any]]:
+    def get_best_randomforest_parameters(self,X:pd.DataFrame, y:pd.Series)-> tuple[dict[str, Any],BaseEstimator,dict[str, Any]]:
         """get_best_randomforest_parameters : Used for find best parameters in RandomForestClassifier
 
         Args:
@@ -159,7 +159,7 @@ class ModelTuner:
             error_message: Custom Exception
 
         Returns:
-            tuple[BaseEstimator,dict[str, Any]]: model_obj,result_dict = {
+            tuple[dict[str, Any],BaseEstimator,dict[str, Any]]: mlflow_dict,model_obj,result_dict = {
                 'best_param': model.best_estimator_,
                 'training_score': model.score(X_train, y_train),
                 'test_score': model.score(X_test, y_test), 
@@ -186,7 +186,7 @@ class ModelTuner:
             logger.error(msg=f"get_best_randomforest_parameters :: Status:Failed :: Error:{error_message}")
             raise error_message
                                                     
-    def get_best_xgbclassifier_parameters(self,X:pd.DataFrame, y:pd.Series)-> tuple[BaseEstimator,dict[str, Any]]:
+    def get_best_xgbclassifier_parameters(self,X:pd.DataFrame, y:pd.Series)-> tuple[dict[str, Any],BaseEstimator,dict[str, Any]]:
         """get_best_xgbclassifier_parameters : Used for find best parameters in XGBClassifier
 
         Args:
@@ -197,7 +197,7 @@ class ModelTuner:
             error_message: Custom Exception
 
         Returns:
-            tuple[BaseEstimator,dict[str, Any]]: model_obj,result_dict = {
+            tuple[dict[str, Any],BaseEstimator,dict[str, Any]]: mlflow_dict ,model_obj,result_dict = {
                 'best_param': model.best_estimator_,
                 'training_score': model.score(X_train, y_train),
                 'test_score': model.score(X_test, y_test), 
@@ -294,10 +294,10 @@ class ModelTuner:
             pca_data = pd.DataFrame(pca_data)
             
             all_model_result = {}
-            svc_model_obj, all_model_result['svc'] = self.get_best_svc_parameters(pca_data, res_y)
-            gaussiannb_model_obj,all_model_result['gaussiannb'] = self.get_best_gaussiannb_parameters(pca_data, res_y)
-            randomforest_model_obj,all_model_result['randomforest'] = self.get_best_randomforest_parameters(pca_data, res_y)
-            xgbclassifier_model_obj,all_model_result['xgbclassifier'] = self.get_best_xgbclassifier_parameters(pca_data, res_y)
+            svc_mlflow_result_dict,svc_model_obj, all_model_result['svc'] = self.get_best_svc_parameters(pca_data, res_y)
+            gaussiannb_mlflow_result_dict,gaussiannb_model_obj,all_model_result['gaussiannb'] = self.get_best_gaussiannb_parameters(pca_data, res_y)
+            randomforest_mlflow_result_dict,randomforest_model_obj,all_model_result['randomforest'] = self.get_best_randomforest_parameters(pca_data, res_y)
+            xgbclassifier_mlflow_result_dict,xgbclassifier_model_obj,all_model_result['xgbclassifier'] = self.get_best_xgbclassifier_parameters(pca_data, res_y)
             
             all_models_objs_data = {}
             all_models_objs_data['svc'] = svc_model_obj
@@ -314,7 +314,11 @@ class ModelTuner:
                                          best_model_data=best_model_data,
                                          standard_scalar_object=scalar,
                                          smote_object=smote,
-                                         pca_object=pca)
+                                         pca_object=pca,
+                                         svc_mlflow_dict=svc_mlflow_result_dict,
+                                         gaussiannb_mlflow_dict=gaussiannb_mlflow_result_dict,
+                                         randomforest_mlflow_dict=randomforest_mlflow_result_dict,
+                                         xgbclassifier_mlflow_dict=xgbclassifier_mlflow_result_dict)
             
             logger.info(f"Models Artifacts: {result}")
             logger.info("Ended initialize model tuner process!")

@@ -10,7 +10,8 @@ from src.entity.config_entity import (DataIngestionConfig,
                                       ClusterConfig,
                                       ModelTunerConfig,
                                       ModelTrainerConfig,
-                                      S3Config,)
+                                      S3Config,
+                                      ModelEvaluationConfig )
 from src.entity.artifact_entity import RawDataValidationArtifacts
 from src.utilities.utils import read_json,read_csv_file,remove_file
 from src.logger import logger
@@ -38,6 +39,7 @@ class TrainingPipeline:
         self.cluster_config = ClusterConfig()
         self.model_tuner_config = ModelTunerConfig()
         self.model_trainer_config = ModelTrainerConfig()
+        self.model_evolution_config  = ModelEvaluationConfig()
        
     
     def initialize_pipeline(self):
@@ -85,7 +87,8 @@ class TrainingPipeline:
             
             model_trainer = ModelTrainer(config=self.model_trainer_config,
                                          input_file=input_file,
-                                         modeltunerconfig=self.model_tuner_config)
+                                         modeltunerconfig=self.model_tuner_config,
+                                         model_evolution_config=self.model_evolution_config)
             
             model_trainer.initialize_model_trainer()
             logger.info(msg="---------------Completed Training Pipeline---------------")

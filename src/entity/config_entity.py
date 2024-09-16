@@ -1,8 +1,10 @@
 from dataclasses import dataclass,field
 import os
+from dotenv import load_dotenv
 from datetime import datetime
 from src.constants import *
 from pathlib import Path
+load_dotenv()
 
 
 TIMESTAMP: str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
@@ -14,6 +16,7 @@ class BaseArtifactConfig:
     artifact_base_dir = ARTIFACT_FOLDER_NAME
     artifact_dir:Path = Path(artifact_base_dir) / timestamp
     data_dir = Path(DATA_FOLDER_NAME)
+    mlflow_experiment_name = 'training_'+timestamp
     
 
 @dataclass
@@ -228,7 +231,11 @@ class S3Config:
     models_source_path:str = "/".join([BaseArtifactConfig.artifact_base_dir,BaseArtifactConfig.timestamp,MODEL_DATA_FOLDER_NAME])+"/"
     
 
-
+@dataclass
+class ModelEvaluationConfig:
+    mlflow_uri = os.getenv('mlflow_uri')
+    mlflow_experiment_name:str = BaseArtifactConfig.mlflow_experiment_name
+    
     
 
 @dataclass

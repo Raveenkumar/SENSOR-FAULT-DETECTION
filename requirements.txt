@@ -26,3 +26,4 @@ openpyxl
 python-dotenv
 # -e .
 kneed
+mlflow

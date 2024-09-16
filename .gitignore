@@ -190,3 +190,4 @@ notebook/
 src/pipeline/train_models.py
 cluster_data.csv
 db_folder_structure/
+mlruns/

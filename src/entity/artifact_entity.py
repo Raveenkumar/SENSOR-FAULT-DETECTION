@@ -40,5 +40,8 @@ class ModelTunerArtifacts:
     standard_scalar_object : object
     smote_object : object
     pca_object : object 
-   
+    svc_mlflow_dict:dict
+    gaussiannb_mlflow_dict:dict
+    randomforest_mlflow_dict:dict
+    xgbclassifier_mlflow_dict:dict
 

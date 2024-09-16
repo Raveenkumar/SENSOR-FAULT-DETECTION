@@ -2,8 +2,9 @@ import pandas as pd
 import sys,os
 from src.exception import SensorFaultException
 from src.logger import logger
-from src.entity.config_entity import ModelTrainerConfig,ClusterConfig,PreprocessorConfig,ModelTunerConfig,BaseArtifactConfig
+from src.entity.config_entity import ModelTrainerConfig,ClusterConfig,PreprocessorConfig,ModelTunerConfig,BaseArtifactConfig,ModelEvaluationConfig
 from src.components.model_tuner import ModelTuner
+from src.components.model_evaluation import ModelEvaluation
 from src.utilities.utils import (save_models_data,proper_conversion_for_excel_file,
                                  save_model_result_excel,
                                  save_json,
@@ -12,11 +13,13 @@ from src.utilities.utils import (save_models_data,proper_conversion_for_excel_fi
                                  create_folder_using_file_path)
 
 class ModelTrainer:
-    def __init__(self,config:ModelTrainerConfig,input_file:pd.DataFrame,modeltunerconfig:ModelTunerConfig):
+    def __init__(self,config:ModelTrainerConfig,input_file:pd.DataFrame,modeltunerconfig:ModelTunerConfig,model_evolution_config:ModelEvaluationConfig):
         self.config = config
         self.input_file = input_file
         self.model_tuner_config = modeltunerconfig
         self.model_tuner = ModelTuner(config=self.model_tuner_config)
+        self.model_evolution_config = model_evolution_config
+        
         
     def initialize_model_trainer(self):
         """initialize_model_trainer :Used for initialize model trainer
@@ -45,9 +48,19 @@ class ModelTrainer:
                 # exp_best_models_path = self.config.experiment_best_model_object_path / str(cluster)
                 # stable_all_models_path = self.config.stable_all_model_objects_path / str(cluster)
                 # stable_best_model_path = self.config.stable_best_model_object_path / str(cluster)
-                
+                models_mlflow_dict = {}
+                models_mlflow_dict[f'Cluster_{cluster}_svc'] = model_tuner_artifacts.svc_mlflow_dict
+                models_mlflow_dict[f'Cluster_{cluster}_gaussiannb'] = model_tuner_artifacts.gaussiannb_mlflow_dict
+                models_mlflow_dict[f'Cluster_{cluster}_randomforest'] = model_tuner_artifacts.randomforest_mlflow_dict
+                models_mlflow_dict[f'Cluster_{cluster}_xgbclassifier'] = model_tuner_artifacts.xgbclassifier_mlflow_dict
+            
                 all_models_path = self.config.all_model_objects_path
                 best_model_path = self.config.best_model_object_path / f"Cluster_{cluster}"
+                
+                model_evolution = ModelEvaluation(config=self.model_evolution_config, mlflow_data_dict=models_mlflow_dict)
+                
+                # store mlflow data
+                model_evolution.log_into_mlflow()
                 
                 save_models_data(all_model_objects_path=all_models_path,
                                  best_model_object_path=best_model_path,
@@ -109,6 +122,8 @@ class ModelTrainer:
             logger.info(f'copy files to data folder for training results')
             copy_file(self.config.all_model_results_json_file_path,BaseArtifactConfig.data_dir)
             copy_file(self.config.best_model_results_json_file_path,BaseArtifactConfig.data_dir)
+            
+            
             
             logger.info("Ended initialize model trainer process!")
             
