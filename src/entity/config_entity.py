@@ -235,7 +235,8 @@ class S3Config:
 class ModelEvaluationConfig:
     mlflow_uri = os.getenv('mlflow_uri')
     mlflow_experiment_name:str = BaseArtifactConfig.mlflow_experiment_name
-    
+    dagshub_repo_owner_name = DAGSHUB_REPO_OWNER_NAME
+    dagshub_repo_name = DAGSHUB_REPO_NAME    
     
 
 @dataclass

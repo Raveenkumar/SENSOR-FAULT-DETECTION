@@ -243,29 +243,25 @@ class ModelTuner:
             max_auc_score = max(auc_scores.values())
             model_results ={}
             
-            if self.config.auc_score_threshold_value < max_auc_score:
-                if auc_scores['xgbclassifier']== max_auc_score:
-                    logger.info(f"find_best_model:: Status:Success :: Model_Data:'xgbclassifier'")
-                    model_results["xgbclassifier"]=models_results_data['xgbclassifier']
-                    return models_object_data['xgbclassifier'], model_results
-                    
-                elif auc_scores['randomforest']== max_auc_score:
-                    logger.info(f"find_best_model:: Status:Success :: Model_Data:'randomforest'")
-                    model_results["randomforest"]=models_results_data['randomforest']
-                    return models_object_data['randomforest'], model_results
+            if auc_scores['xgbclassifier']== max_auc_score:
+                logger.info(f"find_best_model:: Status:Success :: Model_Data:'xgbclassifier'")
+                model_results["xgbclassifier"]=models_results_data['xgbclassifier']
+                return models_object_data['xgbclassifier'], model_results
+                
+            elif auc_scores['randomforest']== max_auc_score:
+                logger.info(f"find_best_model:: Status:Success :: Model_Data:'randomforest'")
+                model_results["randomforest"]=models_results_data['randomforest']
+                return models_object_data['randomforest'], model_results
 
-                elif auc_scores['svc']== max_auc_score:
-                    logger.info(f"find_best_model:: Status:Success :: Model_Data:'svc'")
-                    model_results["svc"]=models_results_data['svc']
-                    return models_object_data['svc'], model_results     
-                        
-                elif auc_scores['gaussiannb']== max_auc_score:
-                    logger.info(f"find_best_model:: Status:Success :: Model_Data:'gaussiannb'")
-                    model_results["gaussiannb"] = models_results_data['gaussiannb']
-                    return models_object_data['gaussiannb'], model_results
-            else:    
-                logger.warning("find_best_model:: Status: Failed :: No specified model matched the max AUC score.")
-                return () # get from old stable model
+            elif auc_scores['svc']== max_auc_score:
+                logger.info(f"find_best_model:: Status:Success :: Model_Data:'svc'")
+                model_results["svc"]=models_results_data['svc']
+                return models_object_data['svc'], model_results     
+                    
+            elif auc_scores['gaussiannb']== max_auc_score:
+                logger.info(f"find_best_model:: Status:Success :: Model_Data:'gaussiannb'")
+                model_results["gaussiannb"] = models_results_data['gaussiannb']
+                return models_object_data['gaussiannb'], model_results
             
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)

@@ -43,13 +43,13 @@ IQR_MULTIPLIER:float = 1.5
 EXPERIMENT_FOLDER_NAME:str = "experiment_model_data"
 STABLE_FOLDER_NAME:str = "stable_model_data"
 PREPROCESSOR_FOLDER_NAME:str = "preprocessor_stage_one"
-PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.dill"
+PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.pkl"
 PREPROCESSOR_JSON_FILE_NAME:str = "preprocessing_report.json"
 
 # cluster constants
 CLUSTER_COLUMN_NAME:str = "Cluster"
 CLUSTER_FOLDER_NAME:str = "cluster"
-CLUSTER_OBJECT_NAME:str = "cluster_obj.dill"
+CLUSTER_OBJECT_NAME:str = "cluster_obj.pkl"
 
 ## model tuner constants
 # kfold n splits
@@ -95,9 +95,9 @@ AUC_SCORE_THRESHOLD_VALUE :float = 0.95
 MODEL_OBJS_FOLDER_NAME:str ="model_objs"
 BEST_MODEL_OBJ_FOLDER_NAME:str ="bestmodel_obj"
 PREPROCESSOR_FOLDER_STAGE_TWO_NAME:str = "preprocessor_stage_two"
-STANDARD_SCALAR_OBJECT_NAME:str = 'standard_scalar.dill'
-HANDLE_IMBALANCE_SMOTE_OBJECT_NAME : str = "handle_imbalance_smote.dill"
-PCA_OBJECT_NAME: str = "pca.dill"
+STANDARD_SCALAR_OBJECT_NAME:str = 'standard_scalar.pkl'
+HANDLE_IMBALANCE_SMOTE_OBJECT_NAME : str = "handle_imbalance_smote.pkl"
+PCA_OBJECT_NAME: str = "pca.pkl"
 EXCEL_FILES_FOLDER_NAME : str = "excel_files"
 JSON_FILES_FOLDER_NAME : str = "json_files"
 ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME: str = "ALL_models_result.xlsx"
@@ -112,6 +112,13 @@ S3_TRAINING_DATA_FOLDER_NAME: str = "training_data"
 S3_RETRAINING_DATA_FOLDER_NAME: str = "retraining_data"
 S3_CLIENT_DB_FOLDER_NAME: str = "client_db_data"
 DEFAULT_TRAINING_BATCH_FILES:str = "training_batch_files"
+
+
+
+# model evolution constants
+DAGSHUB_REPO_OWNER_NAME:str = 'Raveenkumar'
+DAGSHUB_REPO_NAME:str = 'SENSOR-FAULT-DETECTION'
+
 
 
 

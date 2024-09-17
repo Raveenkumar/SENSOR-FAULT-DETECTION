@@ -4,15 +4,25 @@ import mlflow
 from mlflow.exceptions import RestException
 import mlflow.sklearn
 import numpy as np
+from dotenv import load_dotenv
+import os
+import dagshub
+
 from pathlib import Path
 from src.entity.config_entity import ModelEvaluationConfig
 from src.exception import SensorFaultException
 from src.logger import logger
 
+load_dotenv()
+
+# Set a higher timeout (120 seconds)
+os.environ["MLFLOW_HTTP_REQUEST_TIMEOUT"] = "120"
+
 class ModelEvaluation:
     def __init__(self, config: ModelEvaluationConfig,mlflow_data_dict: dict):
         self.config = config
-        self.mlflow_data_dict = mlflow_data_dict 
+        self.mlflow_data_dict = mlflow_data_dict
+        self.connect_dagshub_repo = dagshub.init(repo_owner=self.config.dagshub_repo_owner_name, repo_name=self.config.dagshub_repo_name, mlflow=True) # type: ignore
 
     def log_into_mlflow(self):
         """log_into_mlflow :Used for store the models data into mlflow repo
@@ -43,7 +53,7 @@ class ModelEvaluation:
                         mlflow.xgboost.log_model(model_data['model'], "model")
                     else:
                         mlflow.sklearn.log_model(model_data['model'], "model")
-                logger.info(f'log_into_mlflow :: Status: Data added into mlflow repo! :: model_name:{cluster_model_name}')      
+                    logger.info(f'log_into_mlflow :: Status: Data added into mlflow repo! :: model_name:{cluster_model_name}')      
                   
         except RestException:
             self.log_into_mlflow()

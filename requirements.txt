@@ -27,3 +27,4 @@ python-dotenv
 # -e .
 kneed
 mlflow
+dagshub

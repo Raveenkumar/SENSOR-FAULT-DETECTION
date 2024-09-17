@@ -2,7 +2,8 @@ from box import ConfigBox
 from pathlib import Path
 import json
 import zipfile
-import shutil,dill
+import shutil
+import pickle
 import os,sys
 from typing import Dict, Any
 import pandas as pd
@@ -263,7 +264,7 @@ def delete_artifact_folder() -> None:
         raise error_message
 
 def save_obj(file_path:Path,obj: object):
-    """save_obj Used: save the model to dill objects
+    """save_obj Used: save the model to pkl objects
 
     Args:
         file_path (Path): file path for save the object
@@ -276,7 +277,7 @@ def save_obj(file_path:Path,obj: object):
         dir_name = os.path.dirname(file_path)
         os.makedirs(dir_name,exist_ok=True)
         with open(file_path,'wb') as file_obj:
-            dill.dump(obj,file=file_obj) 
+            pickle.dump(obj,file=file_obj) 
         logger.info(msg=f'object saved :: Status: Success :: path: {file_path}')    
         
     except Exception as e:
@@ -285,7 +286,7 @@ def save_obj(file_path:Path,obj: object):
         raise error_message
     
 def load_obj(file_path:Path)-> object:
-    """load_obj :Used for load dill object
+    """load_obj :Used for load pkl object
 
     Args:
         file_path (Path): file path of object
@@ -294,13 +295,13 @@ def load_obj(file_path:Path)-> object:
         SensorFaultException: Custom Exception
 
     Returns:
-        object: dill object
+        object: pkl object
     """
     try:
         
         if os.path.exists(file_path):
             with open(file_path,mode='rb') as file_obj:
-                result = dill.load(file=file_obj)
+                result = pickle.load(file=file_obj)
             logger.info(msg=f'object loaded :: Status: Success :: path: {file_path}') 
                
             return result     
@@ -412,7 +413,7 @@ def save_models_data(all_model_objects_path:Path,
 
         
         for model_name,model_obj in all_models_data[0].items():
-            file_name = model_name+".dill"
+            file_name = model_name+".pkl"
             
             all_model_file_path = all_model_objects_path / file_name
             
@@ -430,7 +431,7 @@ def save_models_data(all_model_objects_path:Path,
         save_json(json_file_path,all_models_data[1])   
             
         
-        file_name = "best_model.dill"
+        file_name = "model.pkl"
         # exp_best_model_path = experiment_best_model_object_path / file_name
         # stable_best_file_path = stable_best_model_object_path / file_name
         
