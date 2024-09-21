@@ -4,7 +4,7 @@ from src.exception import SensorFaultException
 from src.configuration.aws_connection import S3Client
 from src.entity.config_entity import S3Config
 from mypy_boto3_s3.service_resource import Bucket,S3ServiceResource 
-from src.utilities.utils import format_as_s3_path,models_auc_threshold_satisfied
+from src.utilities.utils import format_as_s3_path,models_auc_threshold_satisfied,create_folder_using_file_path
 from pathlib import Path
 
 class SimpleStorageService:
@@ -245,30 +245,75 @@ class SimpleStorageService:
             logger.error(msg=f"store_prediction_models execution :: Status:failed :: Error:{error_message}")
             raise error_message
     
-    def store_prediction_models_(self,source_path):
+    def get_prediction_models(self,bucket_object:Bucket):
         try:
-            bucket_obj = self.get_bucket(bucket_name=self.config.bucket_name)
-            if self.check_s3_folder_empty(bucket_object=bucket_obj,s3_folder_path=self.config.champion_folder_path):
-                target_folder_path = self.config.champion_folder_path   
-            else:
-                if models_auc_threshold_satisfied():
-                    target_folder_path = self.config.champion_folder_path
-                else:
-                    target_folder_path = self.config.challenger_folder
+            model_objects = bucket_object.objects.filter(Prefix=self.config.s3_prediction_model_path)
+            cluster_object = bucket_object.objects.filter(Prefix=self.config.s3_prediction_cluster_path)
+            preprocessing_stage_one_object = bucket_object.objects.filter(Prefix=self.config.s3_prediction_preprocessor_one_path)
+            preprocessing_stage_two_objects = bucket_object.objects.filter(Prefix=self.config.s3_prediction_preprocessor_two_path)
+            
+            
+            s3_best_model_path = self.config.champion_folder_path.removesuffix('/')
+            s3_cluster_path = self.config.s3_prediction_cluster_path.removesuffix('/')
+            s3_preprocessor_stage_one_path= self.config.s3_prediction_preprocessor_one_path.removesuffix('/')
+            s3_preprocessor_stage_two_path= self.config.s3_prediction_preprocessor_two_path.removesuffix('/')
+            # download model objects
+            for obj in model_objects:
+                if obj.key.endswith(".pkl") or obj.key.endswith(".dill"):
+                    s3_key = obj.key
+                    local_file_path = s3_key.replace(s3_best_model_path,str(self.config.local_prediction_models_path),1)
+                    create_folder_using_file_path(Path(local_file_path))
+                    self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key) 
+            
+            for obj in cluster_object:
+                if obj.key.endswith(".pkl") or obj.key.endswith(".dill"):
+                    s3_key = obj.key
+                    local_file_path = s3_key.replace(s3_cluster_path,str(self.config.local_prediction_models_path),1)
+                    create_folder_using_file_path(Path(local_file_path))
+                    self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key)    
+            
+            for obj in preprocessing_stage_one_object:
+                if obj.key.endswith(".pkl") or obj.key.endswith(".dill"):
+                    s3_key = obj.key
+                    local_file_path = s3_key.replace(s3_preprocessor_stage_one_path,str(self.config.local_prediction_models_path),1)
+                    create_folder_using_file_path(Path(local_file_path))
+                    self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key) 
                     
-            # check source path exist or not
-            if self.check_s3_subfolder_exists(bucket_obj,source_path):
-                for obj in bucket_obj.objects.filter(Prefix=source_path):
-                    source_key = obj.key
-                    print(f"source key:{source_key}")
-                    destination_path = source_key.replace(source_path,target_folder_path,1)
-                    print(f"destination path: {destination_path}")
-                    self.s3_resource.Object(self.config.bucket_name, destination_path).copy_from(CopySource={'Bucket': self.config.bucket_name, 'Key': source_key})
-                    logger.info(f"models_data copied from :{source_path}--->to:{destination_path}") 
-                logger.info(f"store_prediction_models execution :: Status:Success :: source_path:{source_path} :: destination_path:{target_folder_path}" )    
-    
+            for obj in preprocessing_stage_two_objects:
+                if obj.key.endswith(".pkl") or obj.key.endswith(".dill") :
+                    if not obj.key.endswith("handle_imbalance_smote.dill"):
+                        s3_key = obj.key
+                        local_file_path = s3_key.replace(s3_preprocessor_stage_two_path,str(self.config.local_prediction_models_path),1)
+                        create_folder_using_file_path(Path(local_file_path))
+                        self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key)         
+                           
+            logger.info("get_prediction_models :: Status:Success")             
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
-            logger.error(msg=f"store_prediction_models execution :: Status:failed :: Error:{error_message}")
+            logger.error(msg=f"get_prediction_models execution :: Status:failed :: Error:{error_message}")
             raise error_message
         
+    def clear_bucket(self,bucket_object:Bucket):
+        try:
+            bucket_object.object_versions.delete()
+        except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"clear_bucket  :: Status:failed :: Error:{error_message}")
+            raise error_message
+    
+    def clear_deleted_versions_data(self,bucket_object:Bucket):
+        try:
+            # Iterate through all object versions
+            for version in bucket_object.object_versions.all():
+                if version.is_latest:
+                    continue  # Skip the latest version of the object
+                # Permanently delete old versions and delete markers
+                if version.version_id :
+                    print(f"Deleting version {version.version_id} for object {version.object_key}")
+                    version.delete()
+            
+        except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"clear_old_version_data  :: Status:failed :: Error:{error_message}")
+            raise error_message
+      

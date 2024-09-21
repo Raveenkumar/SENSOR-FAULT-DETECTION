@@ -56,15 +56,25 @@ class ModelTrainer:
             
                 all_models_path = self.config.all_model_objects_path
                 best_model_path = self.config.best_model_object_path / f"Cluster_{cluster}"
+                standard_scalar_path = best_model_path / self.config.standard_scalar_obj_name
+                smote_path = best_model_path / self.config.smote_obj_name
+                pca_path = best_model_path / self.config.pca_obj_name
                 
                 model_evolution = ModelEvaluation(config=self.model_evolution_config, mlflow_data_dict=models_mlflow_dict)
                 
                 # store mlflow data
                 model_evolution.log_into_mlflow()
                 
+                logger.info(f'Saving the models of Cluster: {cluster}')
+                
                 save_models_data(all_model_objects_path=all_models_path,
                                  best_model_object_path=best_model_path,
                                  model_tuner_artifacts=model_tuner_artifacts)
+                
+                logger.info(f"initialize_model_trainer :: storing preprocessing_stage_two objects(scalar,smote,pca)")
+                save_obj(file_path=standard_scalar_path,obj=model_tuner_artifacts.standard_scalar_object)
+                save_obj(file_path=smote_path,obj=model_tuner_artifacts.smote_object)
+                save_obj(file_path=pca_path,obj=model_tuner_artifacts.pca_object)
                 
                 all_models_results_cluster_wise[f"Cluster:{cluster}"] = model_tuner_artifacts.all_models_data[1]
                 best_models_results_cluster_wise[f"Cluster:{cluster}"] = model_tuner_artifacts.best_model_data[1]
@@ -104,27 +114,21 @@ class ModelTrainer:
             #                                              stable_file_path=self.config.stable_pca_path)
             
             
-            final_standard_scalar_path = self.config.standard_scalar_path
-            final_smote_path = self.config.smote_path
-            final_pca_path = self.config.pca_path
+            # final_standard_scalar_path = self.config.standard_scalar_path
+            # final_smote_path = self.config.smote_path
+            # final_pca_path = self.config.pca_path
             
-            logger.info(f"initialize_model_trainer :: create folders for storing preprocessing_stage_two objects(scalar,smote,pca)")
-            create_folder_using_file_path(final_standard_scalar_path)
-            create_folder_using_file_path(final_smote_path)
-            create_folder_using_file_path(final_pca_path)
+            # logger.info(f"initialize_model_trainer :: create folders for storing preprocessing_stage_two objects(scalar,smote,pca)")
+            # create_folder_using_file_path(final_standard_scalar_path)
+            # create_folder_using_file_path(final_smote_path)
+            # create_folder_using_file_path(final_pca_path)
             
-            logger.info(f"initialize_model_trainer :: storing preprocessing_stage_two objects(scalar,smote,pca)")
-            save_obj(file_path=final_standard_scalar_path,obj=model_tuner_artifacts.standard_scalar_object)
-            save_obj(file_path=final_smote_path,obj=model_tuner_artifacts.smote_object)
-            save_obj(file_path=final_pca_path,obj=model_tuner_artifacts.pca_object)
-            
+        
             # copy files models results json files
             logger.info(f'copy files to data folder for training results')
-            copy_file(self.config.all_model_results_json_file_path,BaseArtifactConfig.data_dir)
-            copy_file(self.config.best_model_results_json_file_path,BaseArtifactConfig.data_dir)
-            
-            
-            
+            copy_file(src_file_path=self.config.all_model_results_json_file_path,dst_folder_path=self.config.final_all_model_results_json_file_path)
+            copy_file(src_file_path=self.config.best_model_results_json_file_path,dst_folder_path=self.config.final_best_model_results_json_file_path)
+        
             logger.info("Ended initialize model trainer process!")
             
         except Exception as e:

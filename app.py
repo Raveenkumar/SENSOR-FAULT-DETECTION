@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, HTTPException, UploadFile, Request, BackgroundTasks
 from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
@@ -7,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 from uvicorn import run as app_run
 from src.constants import APP_HOST, APP_PORT
-from src.entity.config_entity import (TrainingRawDataTransformationConfig,
+from src.entity.config_entity import (TrainingRawDataTransformationConfig, 
                                       PredictionRawDataValidationConfig,
                                       BaseArtifactConfig,
                                       PreprocessorConfig,
@@ -16,10 +17,18 @@ from src.entity.artifact_entity import RawDataTransformationArtifacts
 from src.logger import logger
 from src.pipeline.train_models import  get_training_results
 from src.pipeline.training_pipeline import TrainingPipeline
-from src.utilities.utils import clear_artifact_folder,read_json
+from src.utilities.utils import clear_artifact_folder,read_json,create_folder_using_file_path,clear_dashboard_folder,create_dashboard_folder
 import asyncio
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this as needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -28,54 +37,10 @@ templates = Jinja2Templates(directory="templates")
 def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/dashboard")
-def get_dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
 
-@app.post("/upload")
-async def upload_files(files: list[UploadFile] = File(...)):
-    # Set the upload directory path using absolute paths
-    upload_dir = os.path.abspath(PredictionRawDataValidationConfig.prediction_raw_data_folder_path)  
-    logger.info(f"Upload directory set to: {upload_dir}")
-
-    try:
-        # Create the directory along with all intermediate directories if they don't exist
-        os.makedirs(upload_dir, exist_ok=True)
-    except Exception as e:
-        logger.error(f"Failed to create upload directory: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to create upload directory")
-
-    # Handle each uploaded file
-    logger.info(f"Saving file to: {files}")
-    for file in files:
-        try:
-            file_name = file.filename.split("/")[1] # type: ignore
-            logger.info(f"Saving file to: {file}")
-            logger.info(f"Saving file to: {file.filename}")
-            # Use os.path.join to construct the full file path properly
-            file_path = os.path.join(upload_dir, file_name) # type: ignore
-            logger.info(f"Saving file to: {file_path}")
- 
-            # Read the file content asynchronously
-            content = await file.read()
-            
-            # Check if content is empty
-            if not content:
-                logger.warning(f"File {file_name} is empty. Skipping.")
-                raise HTTPException(status_code=400, detail=f"File {file_name} is empty")
-
-            # Save the file content to the specified path
-            with open(file_path, "wb") as buffer:
-                buffer.write(content)
-                logger.info(f"File {file_name} saved successfully at {file_path}")
-
-        except Exception as e:
-            logger.error(f"Error saving file {file.filename}: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Error saving file {file.filename}. Reason: {str(e)}")
-
-    return JSONResponse({"message": "Files uploaded successfully"})
 
 ## training related----start here----
+
 # Training status and pipeline objects
 training_status = {"completed": False}
 upload_status = {"completed": False}
@@ -180,12 +145,11 @@ async def get_training_results_route(request: Request, background_tasks: Backgro
                 'model_scores': dict(model_data)  # Assuming this includes scores like accuracy, recall, etc.
             })
 
-    results = get_training_results()
-    
+
+
     # Return the updated template
     return templates.TemplateResponse("training_report.html", {
         "request": request,
-        "results": results,
         "validation_summary": validation_summary,
         "validation_status_reasons": validation_status_reasons,
         "preprocessing_summary": preprocessing_summary,
@@ -198,9 +162,68 @@ async def get_training_results_route(request: Request, background_tasks: Backgro
 ## training related----end here----
 
 
+
+## prediction related start here---
+ 
+@app.get("/dashboard")
+def get_dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+# Upload route to handle file uploads
+@app.post("/upload")
+async def upload_files(files: list[UploadFile] = File(...)):
+    # Directory path for uploaded files
+    upload_dir = os.path.abspath(PredictionRawDataValidationConfig.prediction_raw_data_folder_path)
+    logger.info(f"Upload directory set to: {upload_dir}")
+
+    try:
+        # Create the directory if it doesn't exist
+        os.makedirs(upload_dir, exist_ok=True)
+    except Exception as e:
+        logger.error(f"Failed to create upload directory: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create upload directory")
+
+    # Handle file uploads
+    for file in files:
+        print(file)
+        print(file.filename)
+        file_name = os.path.basename(file.filename) # type: ignore
+        print(f'Modified File_name')
+        file_path = Path(os.path.join(upload_dir, file_name)) # type: ignore
+        try:
+            # Read the file content asynchronously
+            content = await file.read()
+
+            if not content:
+                logger.warning(f"File {file.filename} is empty. Skipping.")
+                raise HTTPException(status_code=400, detail=f"File {file.filename} is empty")
+
+            create_folder_using_file_path(file_path)
+            # Save the file content to the specified path
+            with open(file_path, "wb") as buffer:
+                buffer.write(content)
+                logger.info(f"File {file.filename} saved successfully at {file_path}")
+
+        except Exception as e:
+            logger.error(f"Error saving file {file.filename}: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error saving file {file.filename}. Reason: {str(e)}")
+
+    return JSONResponse({"message": "Files uploaded successfully"})
+
+# Prediction route
+@app.post("/data_prediction")
+async def run_prediction():
+    try:
+        # Add your prediction pipeline logic here
+        prediction_result = "Prediction successful!"  # Placeholder for actual logic
+        return JSONResponse({"message": prediction_result})
+    except Exception as e:
+        logger.error(f"Error in prediction: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error in prediction. Reason: {str(e)}")
+
 @app.get("/validation_summary")
 def get_validation_results():
-    validation_logs = pd.read_excel(PredictionRawDataValidationConfig.validation_report_file_path)
+    validation_logs = pd.read_excel("./data/training_validation_logs.xlsx")
     
     summary = validation_logs['STATUS'].value_counts().to_dict()
     
@@ -239,6 +262,8 @@ def download_failed_files():
 @app.get("/download/predictions")
 def download_predictions() -> FileResponse:
     return FileResponse('./data/predictions.csv', filename='predictions.csv')
+
+## prediction related ends here ------
 
 if __name__ == "__main__":
     app_run(app, host=APP_HOST, port=APP_PORT)  

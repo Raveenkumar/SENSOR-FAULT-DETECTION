@@ -6,8 +6,11 @@ import mlflow.sklearn
 import numpy as np
 from dotenv import load_dotenv
 import os
+import time
+import requests
+import os
+from requests.exceptions import ConnectionError, Timeout
 import dagshub
-
 from pathlib import Path
 from src.entity.config_entity import ModelEvaluationConfig
 from src.exception import SensorFaultException
@@ -16,13 +19,29 @@ from src.logger import logger
 load_dotenv()
 
 # Set a higher timeout (120 seconds)
-os.environ["MLFLOW_HTTP_REQUEST_TIMEOUT"] = "120"
+os.environ["MLFLOW_HTTP_REQUEST_TIMEOUT"] = "300"
 
 class ModelEvaluation:
     def __init__(self, config: ModelEvaluationConfig,mlflow_data_dict: dict):
         self.config = config
         self.mlflow_data_dict = mlflow_data_dict
-        self.connect_dagshub_repo = dagshub.init(repo_owner=self.config.dagshub_repo_owner_name, repo_name=self.config.dagshub_repo_name, mlflow=True) # type: ignore
+        # Retry logic for Dagshub initialization
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                self.connect_dagshub_repo = dagshub.init(                       # type: ignore
+                    repo_owner=self.config.dagshub_repo_owner_name,
+                    repo_name=self.config.dagshub_repo_name,
+                    mlflow=True
+                )  
+                break  # Successfully connected
+            except (ConnectionError, Timeout, OSError) as e:
+                logger.error(f"Attempt {attempt + 1} to connect to Dagshub failed: {e}")
+                time.sleep(5)  # Wait before retrying
+            except Exception as e:
+                logger.error(f"Unexpected error during Dagshub connection: {str(e)}")
+                raise SensorFaultException(error_message=str(e), error_detail=sys)
+        # self.connect_dagshub_repo = dagshub.init(repo_owner=self.config.dagshub_repo_owner_name, repo_name=self.config.dagshub_repo_name, mlflow=True) # type: ignore
 
     def log_into_mlflow(self):
         """log_into_mlflow :Used for store the models data into mlflow repo

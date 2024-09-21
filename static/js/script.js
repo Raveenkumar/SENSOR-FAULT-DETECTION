@@ -14,8 +14,8 @@ document.getElementById('uploadForm').addEventListener('submit', function(event)
         formData.append('files', file);
     }
 
-    // Upload files to prediction pipeline
-    fetch('/predict', {
+    // Upload files to the correct endpoint
+    fetch('/upload', {  // Corrected endpoint
         method: 'POST',
         body: formData
     })

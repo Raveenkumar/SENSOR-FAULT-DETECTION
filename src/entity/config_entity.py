@@ -17,6 +17,7 @@ class BaseArtifactConfig:
     artifact_dir:Path = Path(artifact_base_dir) / timestamp
     data_dir = Path(DATA_FOLDER_NAME)
     mlflow_experiment_name = 'training_'+timestamp
+    dashboard_dir = data_dir / DASHBOARD_DATA_FOLDER_NAME 
     
 
 @dataclass
@@ -38,21 +39,21 @@ class TrainingRawDataValidationConfig:
     schema_file_path = Path('config') / 'training_schema.json'
     dashboard_validation_show = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / "dashboard_validation_show.json"
     dashboard_validation_report_file_path = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / TRAINING_VALIDATION_LOG_FILE
-    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / BAD_RAW_ZIP_FILE_NAME
+    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir / PREDICTION_DATA_FOLDER_NAME / BAD_RAW_ZIP_FILE_NAME
     
 @dataclass
 class PredictionRawDataValidationConfig:
     purpose = "Prediction"
     raw_file_name_regex_format = REGEX_PATTERN
     prediction_batch_files_path = PREDICTION_BATCH_FILES_PATH
-    prediction_raw_data_folder_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,PREDICTION_RAW_DATA))
+    prediction_raw_data_folder_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,PREDICTION_BATCH_DATA))
     good_raw_data_folder_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,GOOD_RAW_DATA_FOLDER_NAME))
     bad_raw_data_folder_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,BAD_RAW_DATA_FOLDER_NAME))
-    schema_file_path = Path('config') / 'training_schema.json'
+    schema_file_path = Path('config') / 'prediction_schema.json'
     validation_report_file_path =  Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,EVALUATION_DATA_FOLDER_NAME,PREDICTION_VALIDATION_LOG_FILE))
-    dashboard_validation_show = BaseArtifactConfig.data_dir / "dashboard_validation_show.json"
+    dashboard_validation_show = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / "dashboard_validation_show.json" # this file used only training added here because of avoid annotation error
     dashboard_validation_report_file_path = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / PREDICTION_VALIDATION_LOG_FILE
-    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / BAD_RAW_ZIP_FILE_NAME
+    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir / PREDICTION_DATA_FOLDER_NAME / BAD_RAW_ZIP_FILE_NAME
     
 @dataclass
 class TrainingRawDataTransformationConfig(TrainingRawDataValidationConfig):
@@ -78,6 +79,7 @@ class PreprocessorConfig:
     lower_percentile = LOWER_PERCENTILE
     upper_percentile = UPPER_PERCENTILE
     iqr_multiplier = IQR_MULTIPLIER
+    non_duplicate_data_clear_df_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,FINAL_PREDICTION_FILE_FOLDER_NAME,NON_DUPLICATE_DF_NAME))
     preprocessor_object_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                             MODEL_DATA_FOLDER_NAME,
                                                             PREPROCESSOR_FOLDER_NAME,
@@ -174,20 +176,11 @@ class ModelTrainerConfig:
                                                         JSON_FILES_FOLDER_NAME,
                                                         BEST_MODEL_RESULT_DATA_JSON_FILE_NAME))
     
-    standard_scalar_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
-                                                            MODEL_DATA_FOLDER_NAME,
-                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-                                                            STANDARD_SCALAR_OBJECT_NAME))
+    standard_scalar_obj_name = STANDARD_SCALAR_OBJECT_NAME
                                            
-    smote_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
-                                                            MODEL_DATA_FOLDER_NAME,
-                                                            PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-                                                            HANDLE_IMBALANCE_SMOTE_OBJECT_NAME))
-                    
-    pca_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
-                                        MODEL_DATA_FOLDER_NAME,
-                                        PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-                                        PCA_OBJECT_NAME))
+    smote_obj_name = HANDLE_IMBALANCE_SMOTE_OBJECT_NAME
+           
+    pca_obj_name = PCA_OBJECT_NAME
     
     final_best_model_results_json_file_path = Path(os.path.join(DATA_FOLDER_NAME,
                                                                 DASHBOARD_DATA_FOLDER_NAME,
@@ -220,6 +213,7 @@ class ModelTrainerConfig:
     all_model_result_excel_file_name = ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME
     best_model_json_file_name = BEST_MODEL_RESULT_DATA_JSON_FILE_NAME
     best_model_excel_file_name = BEST_MODEL_RESULT_DATA_EXCEL_FILE_NAME
+    best_model_name = BEST_MODEL_NAME
 
 
 
@@ -247,6 +241,24 @@ class ModelEvaluationConfig:
     dagshub_repo_name = DAGSHUB_REPO_NAME    
     
 
+
+@dataclass
+class PredictionPipelineConfig:
+    prediction_models_path = BaseArtifactConfig.data_dir / LOCAL_PREDICTION_MODELS_FOLDER_NAME
+    best_models_path = prediction_models_path / "bestmodel_obj"
+    preprocessor_stage_one_obj_path = prediction_models_path / PREPROCESSOR_OBJECT_NAME
+    preprocessor_stage_one_data_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,FINAL_PREDICTION_FILE_FOLDER_NAME,NON_DUPLICATE_DF_NAME))
+    cluster_obj_path = prediction_models_path / CLUSTER_OBJECT_NAME
+    standard_scalar_obj_name = STANDARD_SCALAR_OBJECT_NAME
+    pca_obj_name = PCA_OBJECT_NAME
+    best_model_name = BEST_MODEL_NAME
+    prediction_data_path = BaseArtifactConfig.data_dir / PREDICTION_DATA_FOLDER_NAME / PREDICTION_DATA_FILE_NAME
+    prediction_with_rawdata_file_name = "prediction_data"+BaseArtifactConfig.timestamp+".csv"
+    predicted_data_with_rawdata_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,FINAL_PREDICTION_FILE_FOLDER_NAME,prediction_with_rawdata_file_name))
+    wafer_column_name = NEW_WAFER_COLUMN_NAME
+    cluster_column_name = CLUSTER_COLUMN_NAME
+    output_column_name = NEW_OUTPUT_COLUMN_NAME
+    
 @dataclass
 class AppConfig:
     training_folder_path  = Path(r"C:\Users\RAVEEN\Downloads\testing_data\batch3")     

@@ -4,6 +4,7 @@ import json
 import zipfile
 import shutil
 import pickle
+import dill
 import os,sys
 from typing import Dict, Any
 import pandas as pd
@@ -276,8 +277,12 @@ def save_obj(file_path:Path,obj: object):
     try:
         dir_name = os.path.dirname(file_path)
         os.makedirs(dir_name,exist_ok=True)
-        with open(file_path,'wb') as file_obj:
-            pickle.dump(obj,file=file_obj) 
+        if os.path.basename(file_path).endswith(".pkl"):
+            with open(file_path,'wb') as file_obj:
+                pickle.dump(obj,file=file_obj) 
+        else:
+            with open(file_path,'wb') as file_obj:
+                dill.dump(obj,file=file_obj)        
         logger.info(msg=f'object saved :: Status: Success :: path: {file_path}')    
         
     except Exception as e:
@@ -300,8 +305,12 @@ def load_obj(file_path:Path)-> object:
     try:
         
         if os.path.exists(file_path):
-            with open(file_path,mode='rb') as file_obj:
-                result = pickle.load(file=file_obj)
+            if os.path.basename(file_path).endswith(".pkl"):
+                with open(file_path,mode='rb') as file_obj:
+                    result = pickle.load(file=file_obj)
+            else:
+                with open(file_path,mode='rb') as file_obj:
+                    result = dill.load(file=file_obj)        
             logger.info(msg=f'object loaded :: Status: Success :: path: {file_path}') 
                
             return result     
@@ -342,11 +351,11 @@ def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFra
                         'test_score': model.score(X_test, y_test), 
                         'auc_score': roc_auc_score(y_test, y_pred),
                         "overall_recall_score" : recall_score(y_test, y_pred, zero_division=0),
-                        "recall_1": classification_report_['1.0']['recall'] ,
-                        "recall_0": classification_report_['0.0']['recall'],
+                        "recall_1": classification_report_['1']['recall'] ,
+                        "recall_0": classification_report_['0']['recall'],
                         "overall_precision" : precision_score(y_test, y_pred, zero_division=0),
-                        "precision_1": classification_report_['1.0']['precision'] ,
-                        "precision_0": classification_report_['0.0']['precision']
+                        "precision_1": classification_report_['1']['precision'] ,
+                        "precision_0": classification_report_['0']['precision']
                     }
         
         result_dict = {
@@ -431,7 +440,7 @@ def save_models_data(all_model_objects_path:Path,
         save_json(json_file_path,all_models_data[1])   
             
         
-        file_name = "model.pkl"
+        file_name = ModelTrainerConfig.best_model_name
         # exp_best_model_path = experiment_best_model_object_path / file_name
         # stable_best_file_path = stable_best_model_object_path / file_name
         
@@ -620,6 +629,28 @@ def clear_artifact_folder():
             logger.error(msg=f"clear_artifact_folder :: Status:Failed :: error_message:{error_message}")
             raise error_message  
 
+def clear_dashboard_folder():
+    try:
+        if os.path.exists(BaseArtifactConfig.dashboard_dir):
+            shutil.rmtree(BaseArtifactConfig.dashboard_dir)
+            logger.info(f"clear_dashboard_folder :: Status:Success")
+        
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"clear_dashboard_folder :: Status:Failed :: error_message:{error_message}")
+            raise error_message        
+
+def create_dashboard_folder():
+    try:
+        os.makedirs(BaseArtifactConfig.dashboard_dir,exist_ok= True)
+        logger.info(f"create_dashboard_folder :: Status:Success")
+        
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"create_dashboard_folder :: Status:Failed :: error_message:{error_message}")
+            raise error_message  
+    
+    
 def remove_file(file_path:Path):
     try:
         if os.path.exists(file_path):
@@ -631,3 +662,29 @@ def remove_file(file_path:Path):
             logger.error(msg=f"clear_artifact_folder :: Status:Failed :: error_message:{error_message}")
             raise error_message
                        
+def check_folder_empty(folder_path:Path) -> bool:
+    """check_folder_empty :Used for check the folder path empty or not
+
+    Args:
+        folder_path (Path): Folder path for checking
+
+    Raises:
+        error_message: Custom Exception
+
+    Returns:
+        bool: status if True folder is empty else False
+    """
+    try:
+        if os.path.exists(folder_path):
+            if len(list(os.listdir(folder_path)))!=0:
+                logger.info(f'check_folder_empty :: Status:Folder is not empty :: folder_path:{folder_path}')
+                status = False
+            else:
+                logger.info(f'check_folder_empty :: Status:Folder is  empty :: folder_path:{folder_path}')
+                status = True
+        return status    
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"check_folder_empty :: Status:Failed :: error_message:{error_message}")
+            raise error_message
+                         

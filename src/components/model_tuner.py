@@ -57,7 +57,7 @@ class ModelTuner:
             
             random_search = RandomizedSearchCV(estimator=model,
                                                param_distributions=params,
-                                               n_iter=20,
+                                               n_iter=10,
                                                cv=self.stratifiedKfold_validation(),
                                                scoring='roc_auc',
                                                error_score='raise',

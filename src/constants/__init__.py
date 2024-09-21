@@ -7,6 +7,8 @@ from datetime import datetime
 ARTIFACT_FOLDER_NAME:str = "artifacts"
 DATA_FOLDER_NAME:str = 'data'
 MODEL_DATA_FOLDER_NAME: str = "model_data"
+DASHBOARD_DATA_FOLDER_NAME: str = "dashboard_data"
+
 
 #logs constants
 LOG_FOLDER_NAME:str = "logs"
@@ -18,7 +20,7 @@ TRAINING_BATCH_FILES_PATH: str = "artifacts/Client_DB_Data/training_batch_files"
 PREDICTION_BATCH_FILES_PATH: str = "artifacts/Client_DB_Data/prediction_batch_files"
 TRAINING_DATA_FOLDER_NAME: str = "training_data"
 PREDICTION_DATA_FOLDER_NAME: str = 'prediction_data'
-PREDICTION_RAW_DATA: str = "prediction_raw_data"
+PREDICTION_BATCH_DATA: str = "prediction_batch_files"
 GOOD_RAW_DATA_FOLDER_NAME: str = "good_raw_data"
 BAD_RAW_DATA_FOLDER_NAME: str = "bad_raw_data"
 EVALUATION_DATA_FOLDER_NAME: str  = "evaluation_data"
@@ -43,13 +45,14 @@ IQR_MULTIPLIER:float = 1.5
 EXPERIMENT_FOLDER_NAME:str = "experiment_model_data"
 STABLE_FOLDER_NAME:str = "stable_model_data"
 PREPROCESSOR_FOLDER_NAME:str = "preprocessor_stage_one"
-PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.pkl"
+PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.dill"
 PREPROCESSOR_JSON_FILE_NAME:str = "preprocessing_report.json"
+NON_DUPLICATE_DF_NAME :str = "final_non_duplicate_df.csv"
 
 # cluster constants
 CLUSTER_COLUMN_NAME:str = "Cluster"
 CLUSTER_FOLDER_NAME:str = "cluster"
-CLUSTER_OBJECT_NAME:str = "cluster_obj.pkl"
+CLUSTER_OBJECT_NAME:str = "cluster_obj.dill"
 
 ## model tuner constants
 # kfold n splits
@@ -95,16 +98,17 @@ AUC_SCORE_THRESHOLD_VALUE :float = 0.95
 MODEL_OBJS_FOLDER_NAME:str ="model_objs"
 BEST_MODEL_OBJ_FOLDER_NAME:str ="bestmodel_obj"
 PREPROCESSOR_FOLDER_STAGE_TWO_NAME:str = "preprocessor_stage_two"
-STANDARD_SCALAR_OBJECT_NAME:str = 'standard_scalar.pkl'
-HANDLE_IMBALANCE_SMOTE_OBJECT_NAME : str = "handle_imbalance_smote.pkl"
-PCA_OBJECT_NAME: str = "pca.pkl"
+STANDARD_SCALAR_OBJECT_NAME:str = 'standard_scalar.dill'
+HANDLE_IMBALANCE_SMOTE_OBJECT_NAME : str = "handle_imbalance_smote.dill"
+PCA_OBJECT_NAME: str = "pca.dill"
 EXCEL_FILES_FOLDER_NAME : str = "excel_files"
 JSON_FILES_FOLDER_NAME : str = "json_files"
-ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME: str = "ALL_models_result.xlsx"
+ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME: str = "all_models_result.xlsx"
 BEST_MODEL_RESULT_DATA_EXCEL_FILE_NAME: str = "best_model_result.xlsx"
-ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME: str = "ALL_models_result.json"
+ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME: str = "all_models_result.json"
 BEST_MODEL_RESULT_DATA_JSON_FILE_NAME: str = "best_model_result.json"
 EXCEL_AND_JSON_FILES_FOLDER_NAME: str = "excel_and_json_files"
+BEST_MODEL_NAME: str = "model.pkl"
 
 #s3 constants
 BUCKET_NAME:str = 'wafersensorsdata'
@@ -112,12 +116,15 @@ S3_TRAINING_DATA_FOLDER_NAME: str = "training_data"
 S3_RETRAINING_DATA_FOLDER_NAME: str = "retraining_data"
 S3_CLIENT_DB_FOLDER_NAME: str = "client_db_data"
 DEFAULT_TRAINING_BATCH_FILES:str = "training_batch_files"
-
-
+LOCAL_PREDICTION_MODELS_FOLDER_NAME: str = "prediction_models"
 
 # model evolution constants
 DAGSHUB_REPO_OWNER_NAME:str = 'Raveenkumar'
 DAGSHUB_REPO_NAME:str = 'SENSOR-FAULT-DETECTION'
+
+
+# prediction constants
+PREDICTION_DATA_FILE_NAME: str = "predictions.xlsx"
 
 
 

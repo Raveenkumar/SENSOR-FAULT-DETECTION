@@ -7,7 +7,8 @@ from src.utilities.utils import (read_json,read_csv_file,
                                  create_folder_using_file_path,
                                  create_folder_using_folder_path,copy_file,
                                  create_zip_from_folder,
-                                 save_json)
+                                 save_json,
+                                 remove_file)
 from src.logger import logger
 from src.exception import SensorFaultException
 import pandas as pd
@@ -212,6 +213,10 @@ class RawDataValidation:
             create_folder_using_folder_path(self.bad_raw_data_path)
             create_folder_using_file_path(self.validation_report_file_path)
             
+            # remove bad_raw_zip if exists to avoid getting previous data
+            remove_file(self.config.dashboard_bad_raw_zip_file_path)
+            
+            
             for file in os.listdir(path=self.data_files_path):
                 file_path = Path(os.path.join(self.data_files_path, file))
                 #read raw_data
@@ -243,10 +248,13 @@ class RawDataValidation:
             save_json(self.config.dashboard_validation_show,test_data)
             # copy validation report file to data folder 
             logger.info(f"initialize_rawdata_validation_process :: copy the validation file into data folder for report")
+            create_folder_using_file_path(self.dashboard_validation_report_file_path)
             copy_file(self.validation_report_file_path,self.dashboard_validation_report_file_path)
             
             # zip the bad raw data only prediction
+            
             if self.bad_raw_data_path == PredictionRawDataValidationConfig.bad_raw_data_folder_path:
+                create_folder_using_file_path(self.config.dashboard_bad_raw_zip_file_path)
                 logger.info(f"initialize_rawdata_validation_process :: zip the bad data files for providing")
                 create_zip_from_folder(self.bad_raw_data_path,self.config.dashboard_bad_raw_zip_file_path)
                 
