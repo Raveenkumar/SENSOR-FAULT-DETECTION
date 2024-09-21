@@ -17,7 +17,7 @@ from sklearn.base import BaseEstimator
 from src.logger import logger
 from mypy_boto3_s3.service_resource import Bucket,S3ServiceResource 
 from src.exception import SensorFaultException
-from src.entity.config_entity import BaseArtifactConfig,ModelTrainerConfig,ModelTunerConfig,DataIngestionConfig
+from src.entity.config_entity import BaseArtifactConfig,ModelTrainerConfig,ModelTunerConfig,DataIngestionConfig,PredictionRawDataValidationConfig
 from src.entity.artifact_entity import ModelTunerArtifacts
 
 
@@ -112,7 +112,9 @@ def read_csv_file(file_path:Path) -> pd.DataFrame:
     except Exception as e:
         error_message =  SensorFaultException(error_message=str(e),error_detail=sys)
         logger.error(f"read csv data :: file_path:{file_path} :: Status:Failed :: Error:{error_message}")
+        os._exit(1)
         raise error_message
+        
 
 def style_excel(excel_filename):
     """style_excel : Used for style the append_log_to_excel method
@@ -688,3 +690,28 @@ def check_folder_empty(folder_path:Path) -> bool:
             logger.error(msg=f"check_folder_empty :: Status:Failed :: error_message:{error_message}")
             raise error_message
                          
+def save_bad_file_names():
+    try:
+        files_data = {}
+        files_list = os.listdir(PredictionRawDataValidationConfig.bad_raw_data_folder_path)
+        files_data['bad_files'] = files_list
+        create_folder_using_file_path(PredictionRawDataValidationConfig.dashboard_bad_file_names_json_path)
+        save_json(PredictionRawDataValidationConfig.dashboard_bad_file_names_json_path,files_data)
+        logger.info(f"save_bad_file_names :: Status:Success")
+        
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"save_bad_file_names :: Status:Failed :: error_message:{error_message}")
+            raise error_message 
+
+def get_bad_file_names():
+    try:
+        files_data = read_json(PredictionRawDataValidationConfig.dashboard_bad_file_names_json_path)
+        logger.info(f"get_bad_file_names :: Status:Success")
+        return list(files_data['bad_files'])
+    
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"get_bad_file_names :: Status:Failed :: error_message:{error_message}")
+            raise error_message
+                             

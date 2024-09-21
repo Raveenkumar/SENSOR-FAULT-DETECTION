@@ -54,6 +54,7 @@ class PredictionRawDataValidationConfig:
     dashboard_validation_show = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / "dashboard_validation_show.json" # this file used only training added here because of avoid annotation error
     dashboard_validation_report_file_path = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / PREDICTION_VALIDATION_LOG_FILE
     dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir / PREDICTION_DATA_FOLDER_NAME / BAD_RAW_ZIP_FILE_NAME
+    dashboard_bad_file_names_json_path =  BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / BAD_FILE_NAMES_FILE_NAME
     
 @dataclass
 class TrainingRawDataTransformationConfig(TrainingRawDataValidationConfig):
@@ -252,7 +253,7 @@ class PredictionPipelineConfig:
     standard_scalar_obj_name = STANDARD_SCALAR_OBJECT_NAME
     pca_obj_name = PCA_OBJECT_NAME
     best_model_name = BEST_MODEL_NAME
-    prediction_data_path = BaseArtifactConfig.data_dir / PREDICTION_DATA_FOLDER_NAME / PREDICTION_DATA_FILE_NAME
+    predictions_data_path = BaseArtifactConfig.data_dir / PREDICTION_DATA_FOLDER_NAME / PREDICTION_DATA_FILE_NAME
     prediction_with_rawdata_file_name = "prediction_data"+BaseArtifactConfig.timestamp+".csv"
     predicted_data_with_rawdata_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,FINAL_PREDICTION_FILE_FOLDER_NAME,prediction_with_rawdata_file_name))
     wafer_column_name = NEW_WAFER_COLUMN_NAME

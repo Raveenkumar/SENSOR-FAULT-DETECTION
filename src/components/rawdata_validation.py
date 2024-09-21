@@ -8,7 +8,8 @@ from src.utilities.utils import (read_json,read_csv_file,
                                  create_folder_using_folder_path,copy_file,
                                  create_zip_from_folder,
                                  save_json,
-                                 remove_file)
+                                 remove_file,
+                                 save_bad_file_names)
 from src.logger import logger
 from src.exception import SensorFaultException
 import pandas as pd
@@ -219,29 +220,36 @@ class RawDataValidation:
             
             for file in os.listdir(path=self.data_files_path):
                 file_path = Path(os.path.join(self.data_files_path, file))
+            
+                
                 #read raw_data
                 raw_dataframe = read_csv_file(file_path=file_path)
                 if self.filename_validation(file_name=file)=="Failed":
-                    shutil.move(src=file_path, dst=self.bad_raw_data_path)
+                    shutil.copy2(src=file_path, dst=self.bad_raw_data_path)
+                    os.remove(file_path)
                     continue
 
                 # Check number of columns validation
                 if self.numberofcolumns_validation(file_name=file,dataframe=raw_dataframe)=="Failed":
-                    shutil.move(src=file_path, dst=self.bad_raw_data_path)
+                    shutil.copy2(src=file_path, dst=self.bad_raw_data_path)
+                    os.remove(file_path)
                     continue
                 
                 # Check number of columns validation
                 if self.columndata_whole_missing_validation(file_name=file,dataframe=raw_dataframe)=="Failed":
-                    shutil.move(src=file_path, dst=self.bad_raw_data_path)
+                    shutil.copy2(src=file_path, dst=self.bad_raw_data_path)
+                    os.remove(file_path)
                     continue
                 
                 # Check columns name validation
                 if self.columnsdata_validation(file_name=file,dataframe=raw_dataframe)=="Failed":
-                    shutil.move(src=file_path, dst=self.bad_raw_data_path)
+                    shutil.copy2(src=file_path, dst=self.bad_raw_data_path)
+                    os.remove(file_path)
                     continue
 
                 # If all validations pass, move to good_raw_folder
-                shutil.move(src=file_path, dst=self.good_raw_data_path)
+                shutil.copy2(src=file_path, dst=self.good_raw_data_path)
+                os.remove(file_path)
             
             #for validation report show only default training
             test_data = {"Dashboard":"show_validation_report"}
@@ -257,6 +265,7 @@ class RawDataValidation:
                 create_folder_using_file_path(self.config.dashboard_bad_raw_zip_file_path)
                 logger.info(f"initialize_rawdata_validation_process :: zip the bad data files for providing")
                 create_zip_from_folder(self.bad_raw_data_path,self.config.dashboard_bad_raw_zip_file_path)
+                save_bad_file_names() # save the bad file names
                 
             result = RawDataValidationArtifacts(good_raw_data_folder=self.good_raw_data_path,
                                                 bad_raw_data_folder=self.bad_raw_data_path,

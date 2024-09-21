@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from datetime import datetime
 import os
 from pathlib import Path
 import pandas as pd
@@ -17,7 +18,8 @@ from src.entity.artifact_entity import RawDataTransformationArtifacts
 from src.logger import logger
 from src.pipeline.train_models import  get_training_results
 from src.pipeline.training_pipeline import TrainingPipeline
-from src.utilities.utils import clear_artifact_folder,read_json,create_folder_using_file_path,clear_dashboard_folder,create_dashboard_folder
+from src.pipeline.prediction_pipeline import PredictionPipeline
+from src.utilities.utils import clear_artifact_folder,read_json,create_folder_using_file_path,get_bad_file_names
 import asyncio
 
 app = FastAPI()
@@ -37,8 +39,6 @@ templates = Jinja2Templates(directory="templates")
 def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-
-
 ## training related----start here----
 
 # Training status and pipeline objects
@@ -46,6 +46,8 @@ training_status = {"completed": False}
 upload_status = {"completed": False}
 
 training_pipeline = TrainingPipeline()
+prediction_pipeline = PredictionPipeline()
+
 
 async def train_model():
     await asyncio.sleep(0)  # Yield control to the event loop
@@ -167,11 +169,13 @@ async def get_training_results_route(request: Request, background_tasks: Backgro
  
 @app.get("/dashboard")
 def get_dashboard(request: Request):
+    
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 # Upload route to handle file uploads
 @app.post("/upload")
 async def upload_files(files: list[UploadFile] = File(...)):
+    logger.info("-------------------Getting files Started-----------------")
     # Directory path for uploaded files
     upload_dir = os.path.abspath(PredictionRawDataValidationConfig.prediction_raw_data_folder_path)
     logger.info(f"Upload directory set to: {upload_dir}")
@@ -198,6 +202,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
                 logger.warning(f"File {file.filename} is empty. Skipping.")
                 raise HTTPException(status_code=400, detail=f"File {file.filename} is empty")
 
+            
             create_folder_using_file_path(file_path)
             # Save the file content to the specified path
             with open(file_path, "wb") as buffer:
@@ -207,15 +212,16 @@ async def upload_files(files: list[UploadFile] = File(...)):
         except Exception as e:
             logger.error(f"Error saving file {file.filename}: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error saving file {file.filename}. Reason: {str(e)}")
-
+    logger.info("-------------------Getting files Ended-----------------")
     return JSONResponse({"message": "Files uploaded successfully"})
 
 # Prediction route
 @app.post("/data_prediction")
-async def run_prediction():
+async def run_prediction() -> JSONResponse:
     try:
         # Add your prediction pipeline logic here
-        prediction_result = "Prediction successful!"  # Placeholder for actual logic
+        prediction_pipeline.initialize_pipeline()
+        prediction_result = "Prediction successful!"
         return JSONResponse({"message": prediction_result})
     except Exception as e:
         logger.error(f"Error in prediction: {str(e)}")
@@ -223,45 +229,49 @@ async def run_prediction():
 
 @app.get("/validation_summary")
 def get_validation_results():
-    validation_logs = pd.read_excel("./data/training_validation_logs.xlsx")
-    
-    summary = validation_logs['STATUS'].value_counts().to_dict()
-    
-    status_reasons = validation_logs[validation_logs['STATUS']=='Failed']['STATUS_REASON'].value_counts().to_dict()
+    validation_data = pd.read_excel(prediction_pipeline.prediction_rawdata_validation_config.dashboard_validation_report_file_path)
+
+    # Process validation data for plots
+    validation_sub_d = validation_data['STATUS'].value_counts().to_dict()
+    no_of_files = validation_data['FILENAME'].nunique()
+    validation_sub_d['Passed'] = no_of_files - validation_sub_d['Failed'] # passed validation will count more in validation report
+    validation_summary = validation_sub_d
+    validation_status_reasons = validation_data[validation_data['STATUS'] == 'Failed']['STATUS_REASON'].value_counts().to_dict()
 
     return JSONResponse({
-        "validation_summary": summary,
-        "status_reasons": status_reasons
+        "validation_summary": validation_summary,
+        "status_reasons": validation_status_reasons
     })
+    
 
 @app.get("/predictions")
 def get_predictions():
-    predictions = pd.read_csv('./data/predictions.csv')
+    predictions = pd.read_excel(prediction_pipeline.config.predictions_data_path)
     predictions_dict = predictions.to_dict(orient='records')
 
     summary = {
-        "working": sum(1 for pred in predictions_dict if pred['output'] == 'Working'),
-        "not_working": sum(1 for pred in predictions_dict if pred['output'] == 'Not Working')
+        "working": sum(1 for pred in predictions_dict if pred[PreprocessorConfig.target_feature] == 'Working'),
+        "not_working": sum(1 for pred in predictions_dict if pred[PreprocessorConfig.target_feature] == 'Not Working')
     }
-
     return JSONResponse({"predictions_summary": summary})
-
+    
+    
 @app.get("/bad_raw_files")
 def get_bad_raw_files():
-    bad_files = ['bad_file1.csv', 'bad_file2.csv']  # Example, replace with actual file list
+    bad_files = get_bad_file_names()  # Example, replace with actual file list
     return JSONResponse({"bad_files": bad_files})
 
 @app.get("/download/validation_report")
 def download_validation_report():
-    return FileResponse(PredictionRawDataValidationConfig.validation_report_file_path, filename='validation_logs.xlsx')
+    return FileResponse(prediction_pipeline.prediction_rawdata_validation_config.dashboard_validation_report_file_path, filename='validation_logs.xlsx')
 
 @app.get("/download/failed_files")
 def download_failed_files():
-    return FileResponse('./data/bad_raw_data.zip', filename='failed_files.zip')
+    return FileResponse(prediction_pipeline.prediction_rawdata_validation_config.dashboard_bad_raw_zip_file_path, filename='failed_files.zip')
 
 @app.get("/download/predictions")
 def download_predictions() -> FileResponse:
-    return FileResponse('./data/predictions.csv', filename='predictions.csv')
+    return FileResponse(prediction_pipeline.config.predictions_data_path, filename='predictions.xlsx')
 
 ## prediction related ends here ------
 

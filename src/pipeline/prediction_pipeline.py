@@ -13,18 +13,19 @@ from src.components.data_ingestion import DataIngestion
 from src.utilities.utils import load_obj,read_csv_file,remove_file,save_model_result_excel
 
 class PredictionPipeline:
-    def __init__(self,folder_path:Path) -> None:
-        self.folder_path = folder_path
+    def __init__(self) -> None:
         self.config = PredictionPipelineConfig()
         self.prediction_rawdata_validation_config = PredictionRawDataValidationConfig()
         self.prediction_rawdata_transformation_config = PredictionRawDataTransformationConfig()
+        self.folder_path = self.prediction_rawdata_validation_config.prediction_raw_data_folder_path
+        
 
 
     def initialize_pipeline(self):
         try:
             logger.info(msg="---------------Started Prediction Pipeline---------------")
             # remove prediction.xlsx file for avoid getting previous data 
-            remove_file(self.config.prediction_data_path)
+            remove_file(self.config.predictions_data_path)
             
             # raw data validation process
             raw_data_validation = RawDataValidation(config=self.prediction_rawdata_validation_config,
@@ -124,8 +125,8 @@ class PredictionPipeline:
             logger.info('Prediction Process :: Status: Output column mapped success :: 0:Working & 1:Not Working')
             final_prediction_file[self.config.output_column_name] = final_prediction_file[self.config.output_column_name].map({0:"Working",1:"Not Working"})
 
-            save_model_result_excel(final_prediction_file,self.config.prediction_data_path)
-            logger.info(f"Prediction Process :: Status: save the prediction file Successfully :: {self.config.prediction_data_path}")
+            save_model_result_excel(final_prediction_file,self.config.predictions_data_path)
+            logger.info(f"Prediction Process :: Status: save the prediction file Successfully :: {self.config.predictions_data_path}")
             
             # prediction with raw file for retrain purpose
             prediction_with_rawdata = pd.merge(preprocessing_stage_one_data_with_wafer_column,final_predictions_combined,how='left')
