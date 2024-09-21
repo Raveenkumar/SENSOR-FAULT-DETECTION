@@ -115,6 +115,7 @@ BUCKET_NAME:str = 'wafersensorsdata'
 S3_TRAINING_DATA_FOLDER_NAME: str = "training_data"
 S3_RETRAINING_DATA_FOLDER_NAME: str = "retraining_data"
 S3_CLIENT_DB_FOLDER_NAME: str = "client_db_data"
+S3_PREDICTION_DATA_FOLDERNAME: str = "predicted_files"
 DEFAULT_TRAINING_BATCH_FILES:str = "training_batch_files"
 LOCAL_PREDICTION_MODELS_FOLDER_NAME: str = "prediction_models"
 

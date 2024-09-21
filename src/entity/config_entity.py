@@ -226,6 +226,7 @@ class S3Config:
     retraining_files_path:str = "/".join([ARTIFACT_FOLDER_NAME,S3_RETRAINING_DATA_FOLDER_NAME])+"/"
     champion_folder_path: str = "prediction_model_data/champion/"
     challenger_folder:str = "prediction_model_data/challenger/"
+    prediction_files_path:str = "/".join([ARTIFACT_FOLDER_NAME,S3_PREDICTION_DATA_FOLDERNAME])+"/"
     models_source_path:str = "/".join([BaseArtifactConfig.artifact_base_dir,BaseArtifactConfig.timestamp,MODEL_DATA_FOLDER_NAME])+"/"
     prediction_data_path = Path(os.path.join(DATA_FOLDER_NAME, PREDICTION_DATA_FOLDER_NAME))
     local_prediction_models_path = Path(os.path.join(DATA_FOLDER_NAME, LOCAL_PREDICTION_MODELS_FOLDER_NAME))
