@@ -36,9 +36,9 @@ class TrainingRawDataValidationConfig:
     bad_raw_data_folder_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,TRAINING_DATA_FOLDER_NAME,BAD_RAW_DATA_FOLDER_NAME))
     validation_report_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,TRAINING_DATA_FOLDER_NAME,EVALUATION_DATA_FOLDER_NAME,TRAINING_VALIDATION_LOG_FILE))
     schema_file_path = Path('config') / 'training_schema.json'
-    dashboard_validation_show = BaseArtifactConfig.data_dir / "dashboard_validation_show.json"
-    dashboard_validation_report_file_path = BaseArtifactConfig.data_dir / TRAINING_VALIDATION_LOG_FILE
-    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir/BAD_RAW_ZIP_FILE_NAME
+    dashboard_validation_show = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / "dashboard_validation_show.json"
+    dashboard_validation_report_file_path = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / TRAINING_VALIDATION_LOG_FILE
+    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / BAD_RAW_ZIP_FILE_NAME
     
 @dataclass
 class PredictionRawDataValidationConfig:
@@ -51,8 +51,8 @@ class PredictionRawDataValidationConfig:
     schema_file_path = Path('config') / 'training_schema.json'
     validation_report_file_path =  Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,EVALUATION_DATA_FOLDER_NAME,PREDICTION_VALIDATION_LOG_FILE))
     dashboard_validation_show = BaseArtifactConfig.data_dir / "dashboard_validation_show.json"
-    dashboard_validation_report_file_path = BaseArtifactConfig.data_dir / PREDICTION_VALIDATION_LOG_FILE
-    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir / BAD_RAW_ZIP_FILE_NAME
+    dashboard_validation_report_file_path = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / PREDICTION_VALIDATION_LOG_FILE
+    dashboard_bad_raw_zip_file_path = BaseArtifactConfig.data_dir / DASHBOARD_DATA_FOLDER_NAME / BAD_RAW_ZIP_FILE_NAME
     
 @dataclass
 class TrainingRawDataTransformationConfig(TrainingRawDataValidationConfig):
@@ -88,6 +88,7 @@ class PreprocessorConfig:
                                                         JSON_FILES_FOLDER_NAME,
                                                         PREPROCESSOR_JSON_FILE_NAME))
     dashboard_preprocessor_json_file_path = Path(os.path.join(BaseArtifactConfig.data_dir,
+                                                              DASHBOARD_DATA_FOLDER_NAME,
                                                         PREPROCESSOR_JSON_FILE_NAME))
     # stable_preprocessor_object_path = Path(os.path.join(DATA_FOLDER_NAME,
     #                                                     MODEL_DATA_FOLDER_NAME,
@@ -189,9 +190,11 @@ class ModelTrainerConfig:
                                         PCA_OBJECT_NAME))
     
     final_best_model_results_json_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                                DASHBOARD_DATA_FOLDER_NAME,
                                                         BEST_MODEL_RESULT_DATA_JSON_FILE_NAME))
     
     final_all_model_results_json_file_path = Path(os.path.join(DATA_FOLDER_NAME,
+                                                               DASHBOARD_DATA_FOLDER_NAME,
                                                         ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME))
    
     # stable_standard_scalar_path = Path(os.path.join(DATA_FOLDER_NAME,
@@ -229,7 +232,12 @@ class S3Config:
     champion_folder_path: str = "prediction_model_data/champion/"
     challenger_folder:str = "prediction_model_data/challenger/"
     models_source_path:str = "/".join([BaseArtifactConfig.artifact_base_dir,BaseArtifactConfig.timestamp,MODEL_DATA_FOLDER_NAME])+"/"
-    
+    prediction_data_path = Path(os.path.join(DATA_FOLDER_NAME, PREDICTION_DATA_FOLDER_NAME))
+    local_prediction_models_path = Path(os.path.join(DATA_FOLDER_NAME, LOCAL_PREDICTION_MODELS_FOLDER_NAME))
+    s3_prediction_model_path = champion_folder_path+"bestmodel_obj/"
+    s3_prediction_cluster_path = champion_folder_path+"cluster/"
+    s3_prediction_preprocessor_one_path = champion_folder_path+"preprocessor_stage_one/"
+    s3_prediction_preprocessor_two_path = champion_folder_path+"preprocessor_stage_two/"
 
 @dataclass
 class ModelEvaluationConfig:
