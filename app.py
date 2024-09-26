@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 import os
 from pathlib import Path
 import pandas as pd
@@ -45,6 +46,7 @@ upload_status = {"completed": False}
 
 training_pipeline = TrainingPipeline()
 prediction_pipeline = PredictionPipeline()
+s3_bucket = training_pipeline.s3_bucket_obj
 
 
 async def train_model():
@@ -58,7 +60,6 @@ async def sync_s3_training_data():
         try:
             logger.info("start uploading data into cloud!")
             local_artifact_folder_path = BaseArtifactConfig.artifact_dir
-            s3_bucket = training_pipeline.s3_bucket_obj
             logger.info("storing artifact data into cloud")
             training_pipeline.s3.upload_folder_to_s3(bucket_obj=s3_bucket, local_folder_path=local_artifact_folder_path)
             logger.info("storing validated file into cloud")
@@ -214,24 +215,42 @@ async def upload_files(files: list[UploadFile] = File(...)):
 
 # Prediction route
 @app.post("/data_prediction")
-async def run_prediction() -> JSONResponse:
+async def run_prediction(background_tasks: BackgroundTasks) -> JSONResponse:
     try:
+        # getting the prediction models from s3
+        training_pipeline.s3.get_prediction_models(s3_bucket)
+        
         # Initialize the prediction pipeline
         prediction_pipeline.initialize_pipeline()
         
         # Run the prediction process
         prediction_result = "Prediction successful!"
         
-
+         # Add the async S3 sync task to the background
+        background_tasks.add_task(sync_s3_prediction_data)
+        
         # Return the prediction result immediately
         return JSONResponse({"message": prediction_result})
     
     except Exception as e:
         logger.error(f"Error in prediction: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error in prediction. Reason: {str(e)}")
-    
-    
+
+
 async def sync_s3_prediction_data():
+    try:
+        logger.info("Start uploading data into the cloud!")
+
+        # This will run your synchronous S3 upload in a separate thread
+        await run_in_threadpool(upload_s3_prediction_data)
+
+        logger.info("End uploading data into the cloud!")
+
+    except Exception as e:
+        print(f"Upload failed: {e}")
+
+
+def upload_s3_prediction_data():
     try:
         logger.info("start uploading data into cloud!")
         local_artifact_folder_path = BaseArtifactConfig.artifact_dir
@@ -301,9 +320,7 @@ def download_failed_files():
     return FileResponse(prediction_pipeline.prediction_rawdata_validation_config.dashboard_bad_raw_zip_file_path, filename='failed_files.zip')
 
 @app.get("/download/predictions")
-def download_predictions(background_tasks: BackgroundTasks) -> FileResponse:
-    # Add the async S3 sync task to the background
-    background_tasks.add_task(sync_s3_prediction_data)
+async def download_predictions() -> FileResponse:
     return FileResponse(prediction_pipeline.config.predictions_data_path, filename='predictions.xlsx')
 
 ## prediction related ends here ------

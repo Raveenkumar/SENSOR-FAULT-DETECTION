@@ -4,7 +4,7 @@ from src.exception import SensorFaultException
 from src.configuration.aws_connection import S3Client
 from src.entity.config_entity import S3Config
 from mypy_boto3_s3.service_resource import Bucket,S3ServiceResource 
-from src.utilities.utils import format_as_s3_path,models_auc_threshold_satisfied,create_folder_using_file_path
+from src.utilities.utils import format_as_s3_path,models_auc_threshold_satisfied,create_folder_using_file_path,get_local_file_md5
 from pathlib import Path
 
 class SimpleStorageService:
@@ -247,47 +247,64 @@ class SimpleStorageService:
     
     def get_prediction_models(self,bucket_object:Bucket):
         try:
-            model_objects = bucket_object.objects.filter(Prefix=self.config.s3_prediction_model_path)
-            cluster_object = bucket_object.objects.filter(Prefix=self.config.s3_prediction_cluster_path)
-            preprocessing_stage_one_object = bucket_object.objects.filter(Prefix=self.config.s3_prediction_preprocessor_one_path)
-            preprocessing_stage_two_objects = bucket_object.objects.filter(Prefix=self.config.s3_prediction_preprocessor_two_path)
             
             
-            s3_best_model_path = self.config.champion_folder_path.removesuffix('/')
-            s3_cluster_path = self.config.s3_prediction_cluster_path.removesuffix('/')
-            s3_preprocessor_stage_one_path= self.config.s3_prediction_preprocessor_one_path.removesuffix('/')
-            s3_preprocessor_stage_two_path= self.config.s3_prediction_preprocessor_two_path.removesuffix('/')
-            # download model objects
-            for obj in model_objects:
-                if obj.key.endswith(".pkl") or obj.key.endswith(".dill"):
-                    s3_key = obj.key
-                    local_file_path = s3_key.replace(s3_best_model_path,str(self.config.local_prediction_models_path),1)
-                    create_folder_using_file_path(Path(local_file_path))
-                    self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key) 
+            #getting s3 Etag from bucket
+            local_hashtag = get_local_file_md5(self.config.local_md5_check_file_path) # type: ignore
+            s3_obj = bucket_object.Object(self.config.etag_file_path) # type: ignore
+            etag = s3_obj.e_tag.strip('"')
+            logger.info(f"s3 ETag: {etag}")
             
-            for obj in cluster_object:
-                if obj.key.endswith(".pkl") or obj.key.endswith(".dill"):
-                    s3_key = obj.key
-                    local_file_path = s3_key.replace(s3_cluster_path,str(self.config.local_prediction_models_path),1)
-                    create_folder_using_file_path(Path(local_file_path))
-                    self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key)    
-            
-            for obj in preprocessing_stage_one_object:
-                if obj.key.endswith(".pkl") or obj.key.endswith(".dill"):
-                    s3_key = obj.key
-                    local_file_path = s3_key.replace(s3_preprocessor_stage_one_path,str(self.config.local_prediction_models_path),1)
-                    create_folder_using_file_path(Path(local_file_path))
-                    self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key) 
-                    
-            for obj in preprocessing_stage_two_objects:
-                if obj.key.endswith(".pkl") or obj.key.endswith(".dill") :
-                    if not obj.key.endswith("handle_imbalance_smote.dill"):
+            # local model and s3 model are not same the download 
+            if local_hashtag != etag:
+                model_objects = bucket_object.objects.filter(Prefix=self.config.s3_prediction_model_path)
+                cluster_object = bucket_object.objects.filter(Prefix=self.config.s3_prediction_cluster_path)
+                preprocessing_stage_one_object = bucket_object.objects.filter(Prefix=self.config.s3_prediction_preprocessor_one_path)
+                preprocessing_stage_two_objects = bucket_object.objects.filter(Prefix=self.config.s3_prediction_preprocessor_two_path)
+                
+                
+                s3_best_model_path = self.config.champion_folder_path.removesuffix('/')
+                s3_cluster_path = self.config.s3_prediction_cluster_path.removesuffix('/')
+                s3_preprocessor_stage_one_path= self.config.s3_prediction_preprocessor_one_path.removesuffix('/')
+                s3_preprocessor_stage_two_path= self.config.s3_prediction_preprocessor_two_path.removesuffix('/')
+                
+                
+                # download model objects
+                for obj in model_objects:
+                    if obj.key.endswith(".pkl") or obj.key.endswith(".dill"):
                         s3_key = obj.key
-                        local_file_path = s3_key.replace(s3_preprocessor_stage_two_path,str(self.config.local_prediction_models_path),1)
+                        local_file_path = s3_key.replace(s3_best_model_path,str(self.config.local_prediction_models_path),1)
                         create_folder_using_file_path(Path(local_file_path))
-                        self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key)         
-                           
-            logger.info("get_prediction_models :: Status:Success")             
+                        
+                        self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key) 
+                
+                for obj in cluster_object:
+                    if obj.key.endswith(".pkl") or obj.key.endswith(".dill"):
+                        s3_key = obj.key
+                        local_file_path = s3_key.replace(s3_cluster_path,str(self.config.local_prediction_models_path),1)
+                        create_folder_using_file_path(Path(local_file_path))
+                        self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key)    
+                
+                for obj in preprocessing_stage_one_object:
+                    if obj.key.endswith(".pkl") or obj.key.endswith(".dill"):
+                        s3_key = obj.key
+                        local_file_path = s3_key.replace(s3_preprocessor_stage_one_path,str(self.config.local_prediction_models_path),1)
+                        create_folder_using_file_path(Path(local_file_path))
+                        self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key) 
+                        
+                for obj in preprocessing_stage_two_objects:
+                    if obj.key.endswith(".pkl") or obj.key.endswith(".dill") :
+                        if not obj.key.endswith("handle_imbalance_smote.dill"):
+                            s3_key = obj.key
+                            local_file_path = s3_key.replace(s3_preprocessor_stage_two_path,str(self.config.local_prediction_models_path),1)
+                            create_folder_using_file_path(Path(local_file_path))
+                            self.download_file_from_s3(bucket_obj=bucket_object,local_file_path=local_file_path,s3_file_path=s3_key)         
+                            
+                logger.info("get_prediction_models :: Status:Downloaded the new prediction models")
+            
+            else:
+                logger.info("get_prediction_models :: Status: Local models are updated models can't download again!")    
+                             
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"get_prediction_models execution :: Status:failed :: Error:{error_message}")

@@ -28,3 +28,4 @@ python-dotenv
 kneed
 mlflow
 dagshub
+aiobotocore

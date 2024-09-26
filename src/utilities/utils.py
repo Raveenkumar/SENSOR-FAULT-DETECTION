@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import zipfile
 import shutil
+import hashlib
 import pickle
 import dill
 import os,sys
@@ -115,7 +116,6 @@ def read_csv_file(file_path:Path) -> pd.DataFrame:
         os._exit(1)
         raise error_message
         
-
 def style_excel(excel_filename):
     """style_excel : Used for style the append_log_to_excel method
 
@@ -651,8 +651,7 @@ def create_dashboard_folder():
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"create_dashboard_folder :: Status:Failed :: error_message:{error_message}")
             raise error_message  
-    
-    
+     
 def remove_file(file_path:Path):
     try:
         if os.path.exists(file_path):
@@ -713,5 +712,19 @@ def get_bad_file_names():
     except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"get_bad_file_names :: Status:Failed :: error_message:{error_message}")
+            raise error_message
+                             
+def get_local_file_md5(file_path):
+    try:
+        hash_md5 = hashlib.md5()
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        logger.info(f"get_local_file_md5 :: Status:Success :: HastTag:{hash_md5.hexdigest()}")        
+        return hash_md5.hexdigest()    
+    
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"get_local_file_md5 :: Status:Failed :: error_message:{error_message}")
             raise error_message
                              
