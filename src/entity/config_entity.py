@@ -234,6 +234,8 @@ class S3Config:
     s3_prediction_cluster_path = champion_folder_path+"cluster/"
     s3_prediction_preprocessor_one_path = champion_folder_path+"preprocessor_stage_one/"
     s3_prediction_preprocessor_two_path = champion_folder_path+"preprocessor_stage_two/"
+    local_md5_check_file_path = local_prediction_models_path / "bestmodel_obj" / "Cluster_0" / "model.pkl"
+    etag_file_path = "prediction_model_data/champion/bestmodel_obj/Cluster_0/model.pkl"
 
 @dataclass
 class ModelEvaluationConfig:

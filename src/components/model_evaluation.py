@@ -19,7 +19,7 @@ from src.logger import logger
 load_dotenv()
 
 # Set a higher timeout (120 seconds)
-os.environ["MLFLOW_HTTP_REQUEST_TIMEOUT"] = "300"
+os.environ["MLFLOW_HTTP_REQUEST_TIMEOUT"] = "1000"
 
 class ModelEvaluation:
     def __init__(self, config: ModelEvaluationConfig,mlflow_data_dict: dict):
@@ -27,6 +27,7 @@ class ModelEvaluation:
         self.mlflow_data_dict = mlflow_data_dict
         # Retry logic for Dagshub initialization
         max_retries = 3
+        retry_delay = 5  # Start with a 5-second delay
         for attempt in range(max_retries):
             try:
                 self.connect_dagshub_repo = dagshub.init(                       # type: ignore
@@ -37,7 +38,10 @@ class ModelEvaluation:
                 break  # Successfully connected
             except (ConnectionError, Timeout, OSError) as e:
                 logger.error(f"Attempt {attempt + 1} to connect to Dagshub failed: {e}")
-                time.sleep(5)  # Wait before retrying
+                if attempt < max_retries - 1:  # Only sleep if this isn't the last attempt
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
             except Exception as e:
                 logger.error(f"Unexpected error during Dagshub connection: {str(e)}")
                 raise SensorFaultException(error_message=str(e), error_detail=sys)
