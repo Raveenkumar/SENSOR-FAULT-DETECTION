@@ -93,7 +93,7 @@ class SimpleStorageService:
             logger.error(msg=f"create_s3_subfolder execution failed :: Error:{error_message}")
             raise error_message
         
-    def upload_folder_to_s3(self,bucket_obj:Bucket, local_folder_path:Path):
+    def upload_folder_to_s3(self,bucket_obj:Bucket, local_folder_path:Path, s3_folder_path:str):
         """upload_folder_to_s3 :Used for upload the folder data maintain same structure in cloud also
 
         Args:
@@ -108,11 +108,14 @@ class SimpleStorageService:
             for root,_,files in os.walk(local_folder_path):
                 for file in files:
                     local_file_path = os.path.join(root,file)
-                    s3_path = local_file_path.replace("\\","/")
+                    logger.info(self.config.local_artifact_dir)
+                    logger.info(s3_folder_path)
+                    s3_path = local_file_path.replace(self.config.local_artifact_dir,s3_folder_path)
+                    s3_path = s3_path.replace("\\","/")
                     self.upload_file_to_s3(bucket_obj=bucket_obj,
                                            local_file_path=local_file_path,
-                                           s3_subfolder_path=s3_path)
-            logger.info(msg=f"upload_folder_to_s3 :: Status: Successful :: Bucket_Obj:{bucket_obj} :: local_folder_path:{local_folder_path}")
+                                           s3_filepath_path=s3_path)
+            logger.info(msg=f"upload_folder_to_s3 :: Status: Successful :: Bucket_Obj:{bucket_obj} :: local_folder_path:{local_folder_path} :: s3_folder_path:{s3_folder_path}")
                     
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -142,10 +145,10 @@ class SimpleStorageService:
 
                 # Check if it's a file (not a folder)
                 if os.path.isfile(local_file_path):
-                    s3_key = os.path.join(s3_subfolder_path, filename).replace("\\", "/") 
+                    s3_key = os.path.join(s3_subfolder_path, filename).replace("\\", "/")  # 
                 
                     # Upload the file to S3
-                    self.upload_file_to_s3(bucket_obj=bucket_obj,local_file_path=local_file_path,s3_subfolder_path=s3_key)
+                    self.upload_file_to_s3(bucket_obj=bucket_obj,local_file_path=local_file_path,s3_filepath_path=s3_key)
                     
             logger.info(msg=f"upload_files_to_s3 :: Status: Successful :: Bucket_Obj:{bucket_obj} :: local_folder_path:{local_folder_path_} :: s3_file_path:{s3_key} ")
                     
@@ -154,10 +157,10 @@ class SimpleStorageService:
             logger.error(msg=f"upload_files_to_s3 execution failed :: Error:{error_message}")
             raise error_message       
     
-    def upload_file_to_s3(self, bucket_obj:Bucket, local_file_path:str, s3_subfolder_path:str):
+    def upload_file_to_s3(self, bucket_obj:Bucket, local_file_path:str, s3_filepath_path:str):
         try:
-            bucket_obj.upload_file(Filename=local_file_path,Key=s3_subfolder_path)
-            logger.info(msg=f"upload_file_to_s3 :: Status: Successful :: Bucket_Obj:{bucket_obj} :: local_file_path:{local_file_path} :: s3_file_path:{s3_subfolder_path} ")
+            bucket_obj.upload_file(Filename=local_file_path,Key=s3_filepath_path)
+            logger.info(msg=f"upload_file_to_s3 :: Status: Successful :: Bucket_Obj:{bucket_obj} :: local_file_path:{local_file_path} :: s3_file_path:{s3_filepath_path} ")
 
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -219,7 +222,7 @@ class SimpleStorageService:
             logger.error(msg=f"check_s3_folder_empty execution :: Status:failed :: Error:{error_message}")
             raise error_message
     
-    def store_prediction_models(self):
+    def store_prediction_models(self,local_models_source_path):
         try:
             bucket_obj = self.get_bucket(bucket_name=self.config.bucket_name)
             if self.check_s3_folder_empty(bucket_object=bucket_obj,s3_folder_path=self.config.champion_folder_path):
@@ -229,17 +232,17 @@ class SimpleStorageService:
                     target_folder_path = self.config.champion_folder_path
                 else:
                     target_folder_path = self.config.challenger_folder
-            logger.info(f'Copy the models data from:{self.config.models_source_path} to:{target_folder_path}')        
+            logger.info(f'Copy the models data from:{local_models_source_path} to:{target_folder_path}')        
             # check source path exist or not
-            if self.check_s3_subfolder_exists(bucket_obj,self.config.models_source_path):
-                for obj in bucket_obj.objects.filter(Prefix=self.config.models_source_path):
+            if self.check_s3_subfolder_exists(bucket_obj,local_models_source_path):
+                for obj in bucket_obj.objects.filter(Prefix=local_models_source_path):
                     source_path = obj.key
-                    destination_path = source_path.replace(self.config.models_source_path,target_folder_path,1)
+                    destination_path = source_path.replace(local_models_source_path,target_folder_path,1)
                     self.s3_resource.Object(self.config.bucket_name, destination_path).copy_from(CopySource={'Bucket': self.config.bucket_name, 'Key': source_path})
                     logger.info(f"models_data copied from :{source_path}--->to:{destination_path}") 
-                logger.info(f"store_prediction_models execution :: Status:Success :: source_path:{self.config.models_source_path} :: destination_path:{target_folder_path}" )    
+                logger.info(f"store_prediction_models execution :: Status:Success :: source_path:{local_models_source_path} :: destination_path:{target_folder_path}" )    
             else:    
-                logger.info(f"store_prediction_models execution :: Status:Failed :: source_path:{self.config.models_source_path} :: destination_path:{target_folder_path}" )
+                logger.info(f"store_prediction_models execution :: Status:Failed :: source_path:{local_models_source_path} :: destination_path:{target_folder_path}" )
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"store_prediction_models execution :: Status:failed :: Error:{error_message}")
@@ -333,4 +336,22 @@ class SimpleStorageService:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"clear_old_version_data  :: Status:failed :: Error:{error_message}")
             raise error_message
-      
+    
+    def s3_url_generation(self,object_key:str):
+        try:
+            # Generate a pre-signed URL for the file, valid for 15 days
+            s3_object = self.s3_resource.Object(self.config.bucket_name, object_key)
+            url = s3_object.meta.client.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': self.config.bucket_name, 'Key': object_key},
+                ExpiresIn=604799  # URL valid for one week
+            )
+
+            logger.info("s3_url_generation ::: URL Generated:Successfully : object_key: {object_key}")
+            logger.info(f"Your pre-signed URL is: {url}")
+            return url
+        
+        except Exception as e:
+                error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+                logger.error(msg=f"url_generation :: Status:Failed :: error_message:{error_message}")
+                raise error_message    

@@ -9,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 from starlette.templating import _TemplateResponse
 from uvicorn import run as app_run
+from datetime import datetime
 from src.constants import APP_HOST, APP_PORT
 from src.entity.config_entity import (TrainingRawDataTransformationConfig, 
                                       PredictionRawDataValidationConfig,
@@ -18,8 +19,18 @@ from src.entity.config_entity import (TrainingRawDataTransformationConfig,
 from src.logger import logger
 from src.pipeline.training_pipeline import TrainingPipeline
 from src.pipeline.prediction_pipeline import PredictionPipeline
-from src.utilities.utils import clear_artifact_folder,read_json,create_folder_using_file_path,get_bad_file_names
+from src.utilities.utils import (clear_artifact_folder,
+                                 read_json,
+                                 create_folder_using_file_path,
+                                 get_bad_file_names,
+                                 read_csv_file,
+                                 send_datadrift_mail_team,
+                                 send_datadrift_mail_client)
 import asyncio
+
+
+c_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+project_root = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI()
 
@@ -36,14 +47,17 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 def read_root(request: Request):
+    global c_time
+    c_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    print(f'correct time : {c_time}')
     return templates.TemplateResponse("index.html", {"request": request})
 
 ## training related----start here----
 
-# Training status and pipeline objects
-training_status = {"completed": False}
-upload_status = {"completed": False}
-
+# # Training status and pipeline objects
+# training_status = {"completed": False}
+# upload_status = {"completed": False}
+ 
 training_pipeline = TrainingPipeline()
 prediction_pipeline = PredictionPipeline()
 s3_bucket = training_pipeline.s3_bucket_obj
@@ -51,6 +65,10 @@ s3_bucket = training_pipeline.s3_bucket_obj
 
 async def train_model():
     await asyncio.sleep(0)  # Yield control to the event loop
+    global training_status,upload_status
+    # Training status and pipeline objects
+    training_status = {"completed": False}
+    upload_status = {"completed": False}
     training_pipeline.initialize_pipeline()
     training_status["completed"] = True
     
@@ -60,21 +78,22 @@ async def sync_s3_training_data():
         try:
             logger.info("start uploading data into cloud!")
             local_artifact_folder_path = BaseArtifactConfig.artifact_dir
+            s3_folder_path = 'artifacts/'+ c_time
             logger.info("storing artifact data into cloud")
-            training_pipeline.s3.upload_folder_to_s3(bucket_obj=s3_bucket, local_folder_path=local_artifact_folder_path)
+            training_pipeline.s3.upload_folder_to_s3(bucket_obj=s3_bucket, local_folder_path=local_artifact_folder_path,s3_folder_path=s3_folder_path)
             logger.info("storing validated file into cloud")
-            local_training_files_path = training_pipeline.rawdata_transformation_config.merge_file_path
-            s3_training_files_path = training_pipeline.s3_config.training_files_path
-            training_pipeline.s3.upload_files_to_s3(bucket_obj=s3_bucket, 
-                                                    local_folder_path=local_training_files_path, 
-                                                    s3_subfolder_path=s3_training_files_path)
+            local_training_files_path = str(training_pipeline.rawdata_transformation_config.merge_file_path)
+            s3_training_files_path = training_pipeline.s3_config.training_file_path
+            training_pipeline.s3.upload_file_to_s3(bucket_obj=s3_bucket, 
+                                                    local_file_path=local_training_files_path, 
+                                                    s3_filepath_path=s3_training_files_path)
             
             logger.info('Start the store models in prediction models')
-            training_pipeline.s3.store_prediction_models()
-            logger.info('Start the store models in prediction models')
+            local_models_source_path = s3_folder_path+"/model_data/"
+            training_pipeline.s3.store_prediction_models(local_models_source_path=local_models_source_path)
             logger.info("End uploading data into cloud!")
             
-            clear_artifact_folder()
+            clear_artifact_folder(project_root=project_root) 
             
             upload_status["completed"] = True  # Mark upload as completed
             
@@ -165,7 +184,6 @@ async def get_training_results_route(request: Request, background_tasks: Backgro
 
 
 ## prediction related start here---
- 
 @app.get("/dashboard")
 def get_dashboard(request: Request) -> _TemplateResponse:
     return templates.TemplateResponse("dashboard.html", {"request": request})
@@ -221,21 +239,22 @@ async def run_prediction(background_tasks: BackgroundTasks) -> JSONResponse:
         training_pipeline.s3.get_prediction_models(s3_bucket)
         
         # Initialize the prediction pipeline
-        prediction_pipeline.initialize_pipeline()
+        prediction_status = prediction_pipeline.initialize_pipeline()
         
         # Run the prediction process
-        prediction_result = "Prediction successful!"
-        
-         # Add the async S3 sync task to the background
-        background_tasks.add_task(sync_s3_prediction_data)
-        
+        if prediction_status:
+            prediction_result ="Prediction successful!"
+              # Add the async S3 sync task to the background
+            background_tasks.add_task(sync_s3_prediction_data)
+        else:    
+            prediction_result ="Prediction Process Failed!"
+       
         # Return the prediction result immediately
         return JSONResponse({"message": prediction_result})
     
     except Exception as e:
         logger.error(f"Error in prediction: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error in prediction. Reason: {str(e)}")
-
 
 async def sync_s3_prediction_data():
     try:
@@ -249,33 +268,54 @@ async def sync_s3_prediction_data():
     except Exception as e:
         print(f"Upload failed: {e}")
 
-
 def upload_s3_prediction_data():
     try:
+        # need to download the original training dataset and read it
+        # need to read the local predicted file path
+        s3_bucket = training_pipeline.s3_bucket_obj
+        
+        s3_training_file_path = training_pipeline.s3_config.training_file_path
+        create_folder_using_file_path(Path(training_pipeline.data_ingestion_config.training_final_file_path))
+        local_training_file_path = training_pipeline.data_ingestion_config.training_final_file_path
+        training_pipeline.s3.download_file_from_s3(bucket_obj=s3_bucket,
+                                                   local_file_path=local_training_file_path,
+                                                   s3_file_path=s3_training_file_path)
+        logger.info("Getting original training_df and reference_prediction_df")
+        original_training_df = read_csv_file(Path(local_training_file_path))
+        reference_prediction_df =  read_csv_file(prediction_pipeline.config.predicted_data_with_rawdata_file_path)
+        
+        drift_status = prediction_pipeline.data_drift.find_data_drift(original_data=original_training_df,
+                                                       reference_data=reference_prediction_df)
+        
         logger.info("start uploading data into cloud!")
         local_artifact_folder_path = BaseArtifactConfig.artifact_dir
-        s3_bucket = training_pipeline.s3_bucket_obj
+        s3_folder_path = 'artifacts/'+ c_time
         logger.info("storing artifact data into cloud")
-        training_pipeline.s3.upload_folder_to_s3(bucket_obj=s3_bucket, local_folder_path=local_artifact_folder_path)
-        
+        training_pipeline.s3.upload_folder_to_s3(bucket_obj=s3_bucket, local_folder_path=local_artifact_folder_path,s3_folder_path=s3_folder_path)
         logger.info("storing predicted file into cloud")
-        local_predicted_file_path = prediction_pipeline.config.predicted_data_with_rawdata_file_path
-        s3_training_files_path = training_pipeline.s3_config.prediction_files_path
-        training_pipeline.s3.upload_files_to_s3(bucket_obj=s3_bucket, 
-                                                local_folder_path=local_predicted_file_path, 
-                                                s3_subfolder_path=s3_training_files_path)
+        local_predicted_file_path = str(prediction_pipeline.config.predicted_data_with_rawdata_file_path)
+        s3_prediction_files_path = "artifacts/predicted_files/prediction_data"+c_time+".csv"
+        training_pipeline.s3.upload_file_to_s3(bucket_obj=s3_bucket, 
+                                                local_file_path=local_predicted_file_path, 
+                                                s3_filepath_path=s3_prediction_files_path)
+        if drift_status:
+            # generate url
+            url_object_path = s3_folder_path + "/prediction_data/evaluation_data/data_drift.html"
+            drift_report_url = training_pipeline.s3.s3_url_generation(url_object_path)
+            
+            # send the mail
+            send_datadrift_mail_team(url=drift_report_url, 
+                                s3_prediction_folder_name=s3_folder_path)
         
-  
+            send_datadrift_mail_client(prediction_pipeline.config.predictions_with_probabilities_data_path)
+
         logger.info("End uploading data into cloud!")
         
-        clear_artifact_folder()
+        clear_artifact_folder(project_root=project_root)
         
     except Exception as e:
         print(f"Upload failed: {e}")    
     
-    
-    
-
 @app.get("/validation_summary")
 def get_validation_results():
     validation_data = pd.read_excel(prediction_pipeline.prediction_rawdata_validation_config.dashboard_validation_report_file_path)
@@ -292,19 +332,17 @@ def get_validation_results():
         "status_reasons": validation_status_reasons
     })
     
-
 @app.get("/predictions")
 def get_predictions():
     predictions = pd.read_excel(prediction_pipeline.config.predictions_data_path)
     predictions_dict = predictions.to_dict(orient='records')
 
     summary = {
-        "working": sum(1 for pred in predictions_dict if pred[PreprocessorConfig.target_feature] == 'Working'),
-        "not_working": sum(1 for pred in predictions_dict if pred[PreprocessorConfig.target_feature] == 'Not Working')
+        "working": sum(1 for pred in predictions_dict if pred[PreprocessorConfig.target_feature] == prediction_pipeline.config.target_feature_zero_map),
+        "not_working": sum(1 for pred in predictions_dict if pred[PreprocessorConfig.target_feature] == prediction_pipeline.config.target_feature_one_map)
     }
 
     return JSONResponse({"predictions_summary": summary})
-    
     
 @app.get("/bad_raw_files")
 def get_bad_raw_files():

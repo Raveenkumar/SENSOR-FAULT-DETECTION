@@ -14,7 +14,7 @@ TIMESTAMP: str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 class BaseArtifactConfig:
     timestamp: str = TIMESTAMP
     artifact_base_dir = ARTIFACT_FOLDER_NAME
-    artifact_dir:Path = Path(artifact_base_dir) / timestamp
+    artifact_dir:Path =  Path(artifact_base_dir) / timestamp
     data_dir = Path(DATA_FOLDER_NAME)
     mlflow_experiment_name = 'training_'+timestamp
     dashboard_dir = data_dir / DASHBOARD_DATA_FOLDER_NAME 
@@ -22,7 +22,17 @@ class BaseArtifactConfig:
 
 @dataclass
 class DataIngestionConfig:
-    training_batch_files_folder_path:Path = Path(os.path.join(BaseArtifactConfig.artifact_base_dir,DEFAULT_TRAINING_BATCH_FILES))    
+    training_batch_files_folder_path:Path = Path(os.path.join(BaseArtifactConfig.artifact_base_dir,DEFAULT_TRAINING_BATCH_FILES))
+    training_final_file_path = os.path.join(BaseArtifactConfig.artifact_base_dir,DEFAULT_TRAINING_BATCH_FILES,FINAL_FILE_NAME) 
+    final_file_name = FINAL_FILE_NAME
+    wafer_column_name = NEW_WAFER_COLUMN_NAME
+    output_column_name = NEW_OUTPUT_COLUMN_NAME
+    final_output_column_name = FINAL_OUTPUT_COLUMN_NAME
+    feedback_column_name = FEEDBACK_COLUMN_NAME
+    confidence_column_name = CONFIDENCE_COLUMN_NAME
+    target_feature_zero_map = TARGET_FEATURE_ZERO_MAP
+    target_feature_one_map = TARGET_FEATURE_ONE_MAP
+    final_file_name_prediction = FINAL_FILE_TWO_NAME
 
 @dataclass    
 class LogValidationConfig:
@@ -209,6 +219,9 @@ class ModelTrainerConfig:
     #                                                         PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
     #                                                         PCA_OBJECT_NAME))
     
+    cluster_dataset_path =  os.path.join(BaseArtifactConfig.artifact_dir,
+                                              TRAINING_DATA_FOLDER_NAME,
+                                              FINAL_TRAINING_FILE_FOLDER_NAME)
     
     all_model_result_json_file_name = ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME
     all_model_result_excel_file_name = ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME
@@ -221,14 +234,16 @@ class ModelTrainerConfig:
 @dataclass
 class S3Config:
     bucket_name = BUCKET_NAME
+    local_artifact_dir = str(BaseArtifactConfig.artifact_dir)
     default_training_batch_files_path:str = "/".join([S3_CLIENT_DB_FOLDER_NAME,DEFAULT_TRAINING_BATCH_FILES])+"/" 
     training_files_path:str = "/".join([ARTIFACT_FOLDER_NAME,S3_TRAINING_DATA_FOLDER_NAME])+"/"
+    training_file_path:str = "/".join([ARTIFACT_FOLDER_NAME,S3_TRAINING_DATA_FOLDER_NAME,FINAL_FILE_NAME])
     retraining_files_path:str = "/".join([ARTIFACT_FOLDER_NAME,S3_RETRAINING_DATA_FOLDER_NAME])+"/"
     champion_folder_path: str = "prediction_model_data/champion/"
     challenger_folder:str = "prediction_model_data/challenger/"
-    prediction_files_path:str = "/".join([ARTIFACT_FOLDER_NAME,S3_PREDICTION_DATA_FOLDERNAME])+"/"
-    models_source_path:str = "/".join([BaseArtifactConfig.artifact_base_dir,BaseArtifactConfig.timestamp,MODEL_DATA_FOLDER_NAME])+"/"
-    prediction_data_path = Path(os.path.join(DATA_FOLDER_NAME, PREDICTION_DATA_FOLDER_NAME))
+    prediction_files_path:str = "/".join([ARTIFACT_FOLDER_NAME,S3_PREDICTION_DATA_FOLDERNAME])+"/" 
+    models_source_path:str = "/".join([BaseArtifactConfig.artifact_base_dir,BaseArtifactConfig.timestamp,MODEL_DATA_FOLDER_NAME])+"/" #need to remove
+    prediction_data_path = Path(os.path.join(DATA_FOLDER_NAME, PREDICTION_DATA_FOLDER_NAME)) # this for storing prediction results (predictions,csv and bad_raw.zip in local data folder)
     local_prediction_models_path = Path(os.path.join(DATA_FOLDER_NAME, LOCAL_PREDICTION_MODELS_FOLDER_NAME))
     s3_prediction_model_path = champion_folder_path+"bestmodel_obj/"
     s3_prediction_cluster_path = champion_folder_path+"cluster/"
@@ -239,11 +254,24 @@ class S3Config:
 
 @dataclass
 class ModelEvaluationConfig:
+    timestamp:str
     mlflow_uri = os.getenv('mlflow_uri')
-    mlflow_experiment_name:str = BaseArtifactConfig.mlflow_experiment_name
+    mlflow_experiment_name:str = field(init=False)
     dagshub_repo_owner_name = DAGSHUB_REPO_OWNER_NAME
-    dagshub_repo_name = DAGSHUB_REPO_NAME    
+    dagshub_repo_name = DAGSHUB_REPO_NAME
+    confusion_matrixes_path = BaseArtifactConfig.artifact_dir / CONFUSION_MATRIX_FOLDER_NAME 
+   
+    def __post_init__(self):
+        self.mlflow_experiment_name = 'training_'+self.timestamp
     
+
+class DataDriftConfig:
+    drift_schema_file_path = Path('config') / 'drift_schema.json'
+    drift_report_path = os.path.join(BaseArtifactConfig.artifact_dir,
+                                          PREDICTION_DATA_FOLDER_NAME,
+                                          EVALUATION_DATA_FOLDER_NAME,
+                                          DATA_DRIFT_FILE_NAME)
+    drift_threshold_value = DATA_DRIFT_THRESHOLD_VALUE
 
 
 @dataclass
@@ -257,11 +285,17 @@ class PredictionPipelineConfig:
     pca_obj_name = PCA_OBJECT_NAME
     best_model_name = BEST_MODEL_NAME
     predictions_data_path = BaseArtifactConfig.data_dir / PREDICTION_DATA_FOLDER_NAME / PREDICTION_DATA_FILE_NAME
-    prediction_with_rawdata_file_name = "prediction_data"+BaseArtifactConfig.timestamp+".csv"
+    predictions_with_probabilities_data_path = os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,FINAL_PREDICTION_FILE_FOLDER_NAME,PREDICTION_DATA_FILE_NAME)
+    prediction_with_rawdata_file_name = FINAL_PREDICTION_FILE_NAME
     predicted_data_with_rawdata_file_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,FINAL_PREDICTION_FILE_FOLDER_NAME,prediction_with_rawdata_file_name))
     wafer_column_name = NEW_WAFER_COLUMN_NAME
     cluster_column_name = CLUSTER_COLUMN_NAME
     output_column_name = NEW_OUTPUT_COLUMN_NAME
+    final_output_column_name = FINAL_OUTPUT_COLUMN_NAME
+    feedback_column_name = FEEDBACK_COLUMN_NAME
+    confidence_column_name = CONFIDENCE_COLUMN_NAME
+    target_feature_zero_map = TARGET_FEATURE_ZERO_MAP
+    target_feature_one_map = TARGET_FEATURE_ONE_MAP
     
 @dataclass
 class AppConfig:

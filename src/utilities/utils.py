@@ -1,3 +1,4 @@
+from email.mime.application import MIMEApplication
 from box import ConfigBox
 from pathlib import Path
 import json
@@ -9,18 +10,34 @@ import dill
 import os,sys
 from typing import Dict, Any
 import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix,ConfusionMatrixDisplay
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
+from openpyxl.worksheet.datavalidation import DataValidation
 from datetime import datetime
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score,classification_report
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.base import BaseEstimator
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from dotenv import load_dotenv
 from src.logger import logger
 from mypy_boto3_s3.service_resource import Bucket,S3ServiceResource 
 from src.exception import SensorFaultException
-from src.entity.config_entity import BaseArtifactConfig,ModelTrainerConfig,ModelTunerConfig,DataIngestionConfig,PredictionRawDataValidationConfig
+from src.entity.config_entity import (BaseArtifactConfig,
+                                      ModelTrainerConfig,
+                                      ModelTunerConfig,
+                                      PredictionRawDataValidationConfig,
+                                      ModelEvaluationConfig,
+                                      PredictionPipelineConfig)
 from src.entity.artifact_entity import ModelTunerArtifacts
 
+matplotlib.use('Agg')  # Switch to Agg backend for non-interactive use
+
+load_dotenv()
 
 def create_folder_using_folder_path(folder_path:Path):
     """create_folder_using_folder_path :Used for create a folder using folder path
@@ -164,6 +181,69 @@ def style_excel(excel_filename):
         ws.column_dimensions[column_letter].width = adjusted_width# type: ignore
 
     # Save the styled workbook
+    wb.save(excel_filename)
+
+def style_excel_model_result(excel_filename: str) -> None:
+    """style_excel : Used for styling the Excel file and adding feedback dropdown.
+
+    Args:
+        excel_filename (str): Path to the Excel file
+    """
+    wb = load_workbook(excel_filename)
+    ws = wb.active
+
+    # Define border style
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+
+    # Define header fill color and font style
+    header_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')  # Yellow color
+    header_font = Font(bold=True, color='000000')  # Black color for text
+
+    # Apply styles to the header row
+    for cell in ws[1]:  # type: ignore
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # Apply border to all data cells and adjust column widths
+    for row in ws.iter_rows(min_row=2, min_col=1, max_col=ws.max_column, max_row=ws.max_row):  # type: ignore
+        for cell in row:
+            cell.border = thin_border
+
+    # Adjust column widths based on the maximum length of the data in each column
+    for column in ws.columns:  # type: ignore
+        max_length = 0
+        column_letter = column[0].column_letter  # Get the column letter (e.g., 'A', 'B')
+        for cell in column:
+            try:
+                max_length = max(max_length, len(str(cell.value)))
+            except:
+                pass
+        adjusted_width = max_length + 2  # Add some padding
+        ws.column_dimensions[column_letter].width = adjusted_width  # type: ignore
+
+    # Add DataValidation for the "Feedback" column (Assumed to be column D in this case)
+    feedback_validation = DataValidation(
+        type="list", 
+        formula1='"Working,NotWorking"', 
+        allow_blank=True
+    )
+    feedback_validation.error = 'Invalid feedback'
+    feedback_validation.errorTitle = 'Invalid Input'
+    feedback_validation.prompt = 'Select from the list'
+    feedback_validation.promptTitle = 'Feedback'
+
+    # Assuming Feedback is the fourth column (D), apply dropdown to all rows in column D
+    ws.add_data_validation(feedback_validation) # type: ignore
+    feedback_validation.add(f'D2:D{ws.max_row}') # type: ignore
+
+    # Save the styled and updated workbook
     wb.save(excel_filename)
 
 def append_log_to_excel(filename:str, status:str, status_reason: str, remark:str, excel_filename:Path):
@@ -326,7 +406,7 @@ def load_obj(file_path:Path)-> object:
         logger.error(f"load object   ::  Status:Failed :: Error:{error_message}")
         raise error_message    
      
-def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFrame,y_train:pd.DataFrame,y_test:pd.DataFrame)-> tuple[dict[str, Any],BaseEstimator,dict[str, Any]]:
+def model_result(model_name:str,model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFrame,y_train:pd.DataFrame,y_test:pd.DataFrame)-> tuple[dict[str, Any],BaseEstimator,dict[str, Any]]:
     """model_result :Used for store model result data in dict format
 
     Args:
@@ -345,7 +425,14 @@ def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFra
     try: 
         y_pred = model.predict(X_test)  
         
+        # get classification report for individuals like recall of 0 ,1
         classification_report_ :Dict[str, Dict[str, Any]]=  classification_report( y_test,y_pred,output_dict=True) # type: ignore
+        # save the confusion matrix image
+        create_folder_using_folder_path(ModelEvaluationConfig.confusion_matrixes_path)
+        confusion_matrix_image_path = ModelEvaluationConfig.confusion_matrixes_path / f"{model_name}.png"
+        logger.info(f"confusion matrix image path: {confusion_matrix_image_path}")
+        save_confusion_matrix_image(y_test=y_test,y_pred=y_pred,image_path=confusion_matrix_image_path)
+        
         logger.info(f'Classification_report: {classification_report_}')
         mlflow_dict = {"model": model.best_estimator_,
                         "param" : model.best_params_,
@@ -357,7 +444,8 @@ def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFra
                         "recall_0": classification_report_['0']['recall'],
                         "overall_precision" : precision_score(y_test, y_pred, zero_division=0),
                         "precision_1": classification_report_['1']['precision'] ,
-                        "precision_0": classification_report_['0']['precision']
+                        "precision_0": classification_report_['0']['precision'],
+                        "confusion_matrix_image_path": confusion_matrix_image_path
                     }
         
         result_dict = {
@@ -380,26 +468,48 @@ def model_result(model:RandomizedSearchCV,X_train:pd.DataFrame,X_test:pd.DataFra
         logger.error(msg=f"model_result :: Status:Failed :: Error:{error_message}")
         raise error_message
 
-def save_model_result_excel(df:pd.DataFrame, excel_file_path) -> None:
+def save_model_result_excel(df: pd.DataFrame, excel_file_path: Path) -> None:
     """save_model_result_excel :Used for store the model results in excel file 
 
     Args:
-        model_result_data (dict): models results data
-        excel_file_path (_type_): excel file path for store the excel
-
-    Raises:
-        error_message: Custom Exception
+        df (pd.DataFrame): DataFrame containing the model results
+        excel_file_path (str): Path where the excel file will be saved
     """
     try:
+        # Save the DataFrame to Excel
         df.to_excel(excel_file_path, index=False, engine='openpyxl')
-        # Style the Excel file
+
+        # Style the Excel file and add dropdown
         style_excel(excel_file_path)
         logger.info("save_model_result_excel :: Status:created-result data added")
 
     except Exception as e:
-            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
-            logger.error(msg=f"save_model_result_excel :: Status:Failed :: Error:{error_message}")
-            raise error_message
+        error_message = SensorFaultException(error_message=str(e), error_detail=sys)
+        logger.error(f"save_model_result_excel :: Status:Failed :: Error:{error_message}")
+        raise error_message
+
+def save_model_result_feedback_excel(df: pd.DataFrame, excel_file_path: str) -> None:
+    """save_model_result_excel :Used for store the model results in excel file 
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the model results
+        excel_file_path (str): Path where the excel file will be saved
+    """
+    try:
+        # Add the "Feedback" column with default empty values
+        df[PredictionPipelineConfig.feedback_column_name] = ""
+
+        # Save the DataFrame to Excel
+        df.to_excel(excel_file_path, index=False, engine='openpyxl',float_format="%.2f")
+
+        # Style the Excel file and add dropdown
+        style_excel_model_result(excel_file_path)
+        logger.info("save_model_result_excel :: Status:created-result data added")
+
+    except Exception as e:
+        error_message = SensorFaultException(error_message=str(e), error_detail=sys)
+        logger.error(f"save_model_result_excel :: Status:Failed :: Error:{error_message}")
+        raise error_message
 
 def save_models_data(all_model_objects_path:Path,
                 best_model_object_path:Path,
@@ -620,16 +730,30 @@ def models_auc_threshold_satisfied() -> bool:
             logger.error(msg=f"models_auc_threshold_satisfied :: Status:Failed :: error_message:{error_message}")
             raise error_message     
 
-def clear_artifact_folder():
+def clear_artifact_folder(project_root:str):
+    artifact_dir = os.path.join(project_root, 'artifacts')  # 'artifacts' folder in the root
+    logger.info(f'project root folder: {project_root}')
+    logger.info(f'artifact_dir folder: {artifact_dir}')
+    
     try:
-        shutil.rmtree(Path(BaseArtifactConfig.artifact_dir))
-        # shutil.rmtree(Path(DataIngestionConfig.training_batch_files_folder_path))
-        logger.info(f"clear_artifact_folder :: Status:Success")
+        # Check if the directory exists
+        if os.path.exists(artifact_dir):
+            # Loop through the contents of the artifact directory
+            for filename in os.listdir(artifact_dir):
+                file_path = os.path.join(artifact_dir, filename)
+                try:
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)  # Remove the file or symbolic link
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)  # Remove the directory and all its contents
+                except Exception as e:
+                    logger.error(f"Failed to delete {file_path}. Reason: {e}")
+        logger.info(f"Successfully cleared contents of the artifact directory: {artifact_dir}")
         
     except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"clear_artifact_folder :: Status:Failed :: error_message:{error_message}")
-            raise error_message  
+            raise error_message 
 
 def clear_dashboard_folder():
     try:
@@ -727,4 +851,299 @@ def get_local_file_md5(file_path):
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
             logger.error(msg=f"get_local_file_md5 :: Status:Failed :: error_message:{error_message}")
             raise error_message
-                             
+
+def save_confusion_matrix_image(y_test,y_pred,image_path:Path):
+    try:
+        # Generate confusion matrix
+        cm = confusion_matrix(y_test, y_pred)
+
+        # Display confusion matrix
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Class 0', 'Class 1'])
+        plt.figure(figsize=(8, 6))
+        disp.plot(cmap='Blues', values_format='d')  # Use values_format='d' for integers
+        plt.title('Confusion Matrix')
+
+        # Save the plot as an image
+        plt.savefig(image_path, bbox_inches='tight')
+        plt.close()    
+    
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"get_local_file_md5 :: Status:Failed :: error_message:{error_message}")
+            raise error_message        
+                          
+def send_datadrift_mail_team(url:str,s3_prediction_folder_name:str):
+    try:
+        # Email configuration
+        sender_email = os.getenv('SENDER_EMAIL')
+        sender_password = os.getenv('SENDER_EMAIL_PASSWORD')         
+        recipient_email = os.getenv('RECIPIENT_EMAIL')
+        
+        subject = "Data Drift Report"
+    
+        # body of email
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                @keyframes blink {{
+                    0% {{ opacity: 1; }}
+                    50% {{ opacity: 0.5; }}
+                    100% {{ opacity: 1; }}
+                }}
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    background-color: #f0f4f8;
+                    padding: 20px;
+                }}
+                .container {{
+                    background-color: #ffffff;
+                    border-radius: 10px;
+                    padding: 30px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    max-width: 600px;
+                    margin: 0 auto;
+                }}
+                h2 {{
+                    font-size: 24px;
+                    color: #2c3e50;
+                    text-align: center;
+                }}
+                .alert {{
+                    background-color: #fff3cd;
+                    border: 1px solid #ffcc00;
+                    padding: 20px;
+                    border-radius: 8px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #d9534f;
+                    text-align: center;
+                    animation: blink 1.5s infinite;
+                }}
+                .alert-title {{
+                    font-size: 20px;
+                    color: #d9534f;
+                    font-weight: bold;
+                }}
+                p {{
+                    font-size: 16px;
+                    color: #2c3e50;
+                    line-height: 1.6;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    font-size: 14px;
+                    color: #999;
+                    text-align: center;
+                }}
+                .button {{
+                    background-color: #007bff;
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 5px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    display: inline-block;
+                    margin: 20px 0;
+                    text-align: center;
+                }}
+                .button:hover {{
+                    background-color: #0056b3;
+                }}
+                .subject {{
+                    color: red;
+                    font-weight: bold;
+                    text-align: center;
+                    font-size: 22px;
+                    margin: 20px 0;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>🚨 Data Drift Alert</h2>
+                <div class="subject">Critical: Data Drift Detected</div>
+                <div class="alert">
+                    <div class="alert-title">Action Required</div>
+                    <p>Our latest analysis has identified significant data drift that may impact model performance. Immediate review is recommended to prevent potential inaccuracies in future predictions.</p>
+                </div>
+                <p>To access the full data drift report and take appropriate measures, please use the link below:</p>
+                <a href="{url}" class="button">Review Data Drift Report</a>
+
+                <p>For your reference, please check the retraining folder and the prediction folder <strong>{s3_prediction_folder_name}</strong> in your S3 bucket for additional CSV files and data.</p>
+                
+                <div class="footer">
+                    <p>Thank you for your attention.<br>Best regards,<br>Your Data Science Team</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        # Create the email message
+        msg = MIMEMultipart()
+        msg['From'] = sender_email # type: ignore
+        msg['To'] = recipient_email # type: ignore
+        msg['Subject'] = subject
+
+        # Attach the HTML body
+        msg.attach(MIMEText(html_body, 'html'))
+
+        # Send the email
+        try:
+            with smtplib.SMTP('smtp.gmail.com', 587, timeout=1500) as server:
+                server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS
+                server.login(sender_email, sender_password)  # Log in to the email server # type: ignore
+                server.send_message(msg)  # Send the email
+            logger.info("Data Drift Email sent successfully!")
+        except Exception as e:
+            logger.info(f"Failed to send Data Drift Email: {e}")                             
+        
+        logger.info(msg=f"send_datadrift_mail to backend team :: Status:Success")
+        
+    except Exception as e:
+            error_message = SensorFaultException(error_message=str(e),error_detail=sys)
+            logger.error(msg=f"send_datadrift_mail :: Status:Failed :: error_message:{error_message}")
+            raise error_message         
+        
+def send_datadrift_mail_client(excel_file_path: str):
+    try:
+        # Email configuration
+        sender_email = os.getenv('SENDER_EMAIL')
+        sender_password = os.getenv('SENDER_EMAIL_PASSWORD')         
+        recipient_email = os.getenv('RECIPIENT_EMAIL')
+        
+        subject = "Urgent: Data Drift Detected - Client Feedback Required"
+
+        # Body of the email
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                @keyframes fadeIn {{
+                    0% {{ opacity: 0; }}
+                    100% {{ opacity: 1; }}
+                }}
+                @keyframes bounce {{
+                    0%, 20%, 50%, 80%, 100% {{ transform: translateY(0); }}
+                    40% {{ transform: translateY(-20px); }}
+                    60% {{ transform: translateY(-10px); }}
+                }}
+                body {{
+                    font-family: 'Arial', sans-serif;
+                    background-color: #f4f7f9;
+                    padding: 20px;
+                }}
+                .container {{
+                    background-color: #ffffff;
+                    border-radius: 12px;
+                    padding: 40px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    max-width: 600px;
+                    margin: 0 auto;
+                    animation: fadeIn 2s;
+                }}
+                h2 {{
+                    font-size: 26px;
+                    color: #2c3e50;
+                    text-align: center;
+                    margin-bottom: 20px;
+                }}
+                .alert {{
+                    background-color: #ffdfdf;
+                    border-left: 4px solid #ff6f6f;
+                    padding: 20px;
+                    border-radius: 8px;
+                    font-size: 18px;
+                    color: #d9534f;
+                    text-align: center;
+                    animation: bounce 2s infinite;
+                }}
+                .alert-title {{
+                    font-size: 22px;
+                    color: #d9534f;
+                    font-weight: bold;
+                }}
+                p {{
+                    font-size: 16px;
+                    color: #2c3e50;
+                    line-height: 1.6;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    font-size: 14px;
+                    color: #999;
+                    text-align: center;
+                }}
+                .button {{
+                    background-color: #28a745;
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 5px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    display: inline-block;
+                    margin: 20px 0;
+                    text-align: center;
+                }}
+                .button:hover {{
+                    background-color: #218838;
+                }}
+                .subject {{
+                    color: red;
+                    font-weight: bold;
+                    text-align: center;
+                    font-size: 22px;
+                    margin: 20px 0;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>🚨 Data Drift Detected - Feedback Required</h2>
+                <div class="alert">
+                    <div class="alert-title">Action Required: Provide Feedback</div>
+                    <p>We have detected a significant change in the data distribution. Please review the attached prediction file and provide feedback on the new data.<br><strong>Note:</strong> Confidence Score below 0.75 is mandatory</p>
+                </div>
+                <p>Your feedback will be essential in retraining the model to ensure its accuracy and reliability for future predictions.</p>
+                <p>We appreciate your timely response in this matter. Thank you for your cooperation.</p>
+                <div class="footer">
+                    <p>Best regards,<br>(Tech Team)</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Create the email message
+        msg = MIMEMultipart()
+        msg['From'] = sender_email # type: ignore
+        msg['To'] = recipient_email # type: ignore
+        msg['Subject'] = subject
+
+        # Attach the HTML body
+        msg.attach(MIMEText(html_body, 'html'))
+
+        # Attach the Excel file
+        with open(excel_file_path, "rb") as file:
+            part = MIMEApplication(file.read(), Name=os.path.basename(excel_file_path))
+            part['Content-Disposition'] = f'attachment; filename="{os.path.basename(excel_file_path)}"'
+            msg.attach(part)
+
+        # Send the email
+        try:
+            with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS
+                server.login(sender_email, sender_password)  # Log in to the email server # type: ignore
+                server.send_message(msg)  # Send the email
+            logger.info("Data Drift Email with attached file sent successfully!")
+        except Exception as e:
+            logger.info(f"Failed to send Data Drift Email: {e}")
+
+        logger.info(msg=f"send_datadrift_mail to client :: Status:Success")
+
+    except Exception as e:
+        error_message = SensorFaultException(error_message=str(e), error_detail=sys)
+        logger.error(msg=f"send_datadrift_mail :: Status:Failed :: error_message:{error_message}")
+        raise error_message    

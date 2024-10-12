@@ -57,7 +57,7 @@ class ModelTuner:
             
             random_search = RandomizedSearchCV(estimator=model,
                                                param_distributions=params,
-                                               n_iter=10,
+                                               n_iter=5,
                                                cv=self.stratifiedKfold_validation(),
                                                scoring='roc_auc',
                                                error_score='raise',
@@ -97,12 +97,12 @@ class ModelTuner:
         try:
             logger.info(msg=f"get_best_svc_parameters :: Status:Started")
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=100)
-            model = self.model_build(model=SVC(),params=self.config.svc_param_grid)
+            model = self.model_build(model=SVC(probability=True),params=self.config.svc_param_grid)
             model.fit(X_train, y_train)
 
             logger.info(msg=f"get_best_svc_parameters :: Status:Finish") 
             
-            return model_result(model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+            return model_result(model_name="svc",model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
         
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -141,7 +141,7 @@ class ModelTuner:
 
             logger.info(msg=f"get_best_gaussiannb_parameters :: Status:Finish") 
             
-            return model_result(model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+            return model_result(model_name="gaussiannb",model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
         
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -179,7 +179,7 @@ class ModelTuner:
             model.fit(X_train, y_train)
 
             logger.info(msg=f"get_best_randomforest_parameters :: Status:Finish") 
-            return model_result(model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+            return model_result(model_name="randomforest",model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
         
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -217,7 +217,7 @@ class ModelTuner:
 
             logger.info(msg=f"get_best_xgbclassifier_parameters :: Status:Finish") 
             
-            return model_result(model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+            return model_result(model_name="xgbclassifier",model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
         
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)

@@ -2,6 +2,7 @@ import sys,os,re,shutil
 from typing import Union,Literal
 import pandas as pd
 from pathlib import Path
+from datetime import datetime
 from src.entity.config_entity import (DataIngestionConfig,
                                       S3Config,
                                       TrainingRawDataValidationConfig,
@@ -39,11 +40,13 @@ class TrainingPipeline:
         self.cluster_config = ClusterConfig()
         self.model_tuner_config = ModelTunerConfig()
         self.model_trainer_config = ModelTrainerConfig()
-        self.model_evolution_config  = ModelEvaluationConfig()
+        # self.model_evolution_config  = ModelEvaluationConfig()
        
     
     def initialize_pipeline(self):
         try:
+            self.timestamp = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+            self.model_evolution_config = ModelEvaluationConfig(self.timestamp)
             logger.info(msg="---------------Started Training Pipeline---------------")
             
             get_training_data = GetTrainingData(data_ingestion_config=self.data_ingestion_config,

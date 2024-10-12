@@ -38,6 +38,10 @@ class ModelTrainer:
                 
                 cluster_data = dataset[dataset[ClusterConfig.cluster_column_name]==cluster]
                 
+                # save the cluster data
+                cluster_dataset_path = os.path.join(self.config.cluster_dataset_path ,f"cluster_{cluster}.csv" )
+                cluster_data.to_csv(cluster_dataset_path)                
+                
                 X = cluster_data.drop(columns=[ClusterConfig.cluster_column_name,PreprocessorConfig.target_feature])
                 y = cluster_data[PreprocessorConfig.target_feature]
                 
@@ -60,7 +64,10 @@ class ModelTrainer:
                 smote_path = best_model_path / self.config.smote_obj_name
                 pca_path = best_model_path / self.config.pca_obj_name
                 
-                model_evolution = ModelEvaluation(config=self.model_evolution_config, mlflow_data_dict=models_mlflow_dict)
+                model_evolution = ModelEvaluation(config=self.model_evolution_config,
+                                                  mlflow_data_dict=models_mlflow_dict,
+                                                  cluster_dataset_path= cluster_dataset_path,
+                                                  cluster_data = cluster_data)
                 
                 # store mlflow data
                 model_evolution.log_into_mlflow()

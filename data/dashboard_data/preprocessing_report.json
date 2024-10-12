@@ -1,10 +1,10 @@
 {
     "no_of_duplicate_rows": 0,
-    "total_records": 837,
+    "total_records": 1537,
     "total_columns": 592,
     "zero_std_columns": 116,
-    "hight_nan_columns_dropped": 20,
-    "Nan_imputed_columns": 455,
-    "highskew_columns": 283,
-    "outlier_handled_columns": 84
+    "hight_nan_columns_dropped": 4,
+    "Nan_imputed_columns": 471,
+    "highskew_columns": 231,
+    "outlier_handled_columns": 211
 }
