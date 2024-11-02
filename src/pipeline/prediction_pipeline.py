@@ -14,6 +14,7 @@ from src.components.data_ingestion import DataIngestion
 from src.components.model_evaluation import DataDrift
 from src.entity.artifact_entity import PredictionPipelineArtifacts
 import numpy as np
+import xgboost as xgb
 from src.utilities.utils import load_obj,read_csv_file,remove_file,save_model_result_excel,save_model_result_feedback_excel
 
 class PredictionPipeline:
@@ -27,29 +28,34 @@ class PredictionPipeline:
         
 
 
-    def initialize_pipeline(self):
+    def initialize_pipeline(self) -> bool | None:
+        """initialize_pipeline used start the prediction pipeline process
+
+        Returns:
+           PredictionArtifacts: bool | None: True if properly training process is completed (this is use for update prediction data and further process only prediction process is completed)
+        """
         try:
             logger.info(msg="---------------Started Prediction Pipeline---------------")
-            # remove prediction.xlsx file for avoid getting previous data 
-            remove_file(self.config.predictions_data_path)
+            # remove prediction.xlsx file for avoid getting previous prediction data to client 
+            remove_file(self.config.predictions_data_path) 
             
-            # raw data validation process
+            # Raw Data Validation Process
             raw_data_validation = RawDataValidation(config=self.prediction_rawdata_validation_config,
                                                               folder_path=self.folder_path) 
             
             raw_data_validation_artifacts = raw_data_validation.initialize_rawdata_validation_process()
-            # logger.info(raw_data_validation_artifacts)
-            
+
+            # Raw Data Transformation Process
             raw_data_transformation = RawDataTransformation(config=self.prediction_rawdata_transformation_config,
                                                             rawdata_validation_artifacts=raw_data_validation_artifacts)
             self.raw_data_transformation_artifacts = raw_data_transformation.initialize_data_transformation_process()
             
-            # data ingestion process
+            # Data Ingestion Process (reading the transformed file)
             input_file = self.raw_data_transformation_artifacts.final_file_path
             data_ingestion = DataIngestion(input_file)
             data_ingestion_artifact_file = data_ingestion.get_data()
             
-            
+            # Preprocessing Process
             logger.info("Data Preprocessing :: Status:Started")
             # load preprocessing_stage_one_obj
             input_file = data_ingestion_artifact_file
@@ -58,9 +64,9 @@ class PredictionPipeline:
             
             # dataset for after duplicates in preprocessor_stage_one  need for wafers column
             preprocessing_stage_one_data_with_wafer_column = read_csv_file(self.config.preprocessor_stage_one_data_path)
-            
             logger.info("Data Preprocessing :: Status:Ended")
             
+            # Cluster Process
             logger.info("Data Clustering Labels :: Status:Started")
             # load cluster obj
             cluster_obj = load_obj(self.config.cluster_obj_path)
@@ -74,6 +80,7 @@ class PredictionPipeline:
             
             # Now you can copy the DataFrame if needed
             final_cluster_data = preprocessed_stage_one_data.copy()
+            
             # combine wafer names final file
             final_cluster_data = pd.concat(
                 [final_cluster_data, preprocessing_stage_one_data_with_wafer_column[[self.config.wafer_column_name]]],
@@ -81,7 +88,7 @@ class PredictionPipeline:
             )
             logger.info("Data Clustering Labels :: Status:Ended")
             
-            
+            # Prediction Process
             # Perform predictions cluster-wise and combine all the predictions
             logger.info("Prediction Process :: Status:Started")
             prediction_files = []
@@ -97,18 +104,33 @@ class PredictionPipeline:
                 # Load objects
                 scalar_obj_path = cluster_sub_folder_path / self.config.standard_scalar_obj_name
                 pca_obj_path = cluster_sub_folder_path / self.config.pca_obj_name
-                model_path = cluster_sub_folder_path / self.config.best_model_name
+                model_path_pkl_format = cluster_sub_folder_path / self.config.best_model_name
+                model_path_xgb_format = cluster_sub_folder_path / self.config.best_model_xgb_name
+                
+                
                 
                 scalar_obj = load_obj(scalar_obj_path)
                 logger.info(f"Prediction Process :: Status: Loading scalar obj Success :: {scalar_obj}")
                 pca_obj = load_obj(pca_obj_path)
                 logger.info(f"Prediction Process :: Status: Loading pca obj Success :: {pca_obj}")
-                model_obj = load_obj(model_path)
-                logger.info(f"Prediction Process :: Status: Loading model_obj Success :: {model_obj}")
+                
                 
                 # Transform data
                 scaled_data = scalar_obj.transform(prediction_data) # type: ignore
                 pca_data = pca_obj.transform(scaled_data)  # type: ignore
+                
+                # get the model path check xgb format file exist local or not
+                if os.path.exists(model_path_xgb_format):
+                    model_path = model_path_xgb_format
+                    pca_data = xgb.DMatrix(pca_data) # .xgb only support DMatrix only not numpy 
+                else:
+                    model_path = model_path_pkl_format    
+                logger.info(f"Best Model Path is : {model_path}")
+                
+                # load model object
+                model_obj = load_obj(model_path)
+                logger.info(f"Prediction Process :: Status: Loading model_obj Success :: {model_obj}")
+                
                 predictions = model_obj.predict(pca_data)  # type: ignore
                 prediction_proba = model_obj.predict_proba(pca_data).max(axis=1) # type: ignore
                 predictions_probabilities = np.round(prediction_proba,2)  # type: ignore

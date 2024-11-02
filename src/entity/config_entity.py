@@ -103,11 +103,7 @@ class PreprocessorConfig:
     dashboard_preprocessor_json_file_path = Path(os.path.join(BaseArtifactConfig.data_dir,
                                                               DASHBOARD_DATA_FOLDER_NAME,
                                                         PREPROCESSOR_JSON_FILE_NAME))
-    # stable_preprocessor_object_path = Path(os.path.join(DATA_FOLDER_NAME,
-    #                                                     MODEL_DATA_FOLDER_NAME,
-    #                                                     STABLE_FOLDER_NAME,
-    #                                                     PREPROCESSOR_FOLDER_NAME,
-    #                                                     PREPROCESSOR_OBJECT_NAME))
+
 
 @dataclass
 class ClusterConfig:
@@ -116,13 +112,6 @@ class ClusterConfig:
                                                             MODEL_DATA_FOLDER_NAME,
                                                             CLUSTER_FOLDER_NAME,
                                                             CLUSTER_OBJECT_NAME))
-    
-    # stable_cluster_object_path = Path(os.path.join(DATA_FOLDER_NAME,
-    #                                                     MODEL_DATA_FOLDER_NAME,
-    #                                                     STABLE_FOLDER_NAME,
-    #                                                     CLUSTER_FOLDER_NAME,
-    #                                                     CLUSTER_OBJECT_NAME))
-    
 
 @dataclass
 class ModelTunerConfig:
@@ -144,17 +133,6 @@ class ModelTrainerConfig:
     best_model_object_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                             MODEL_DATA_FOLDER_NAME,
                                                             BEST_MODEL_OBJ_FOLDER_NAME))
-    
-    
-    # stable_all_model_objects_path = Path(os.path.join(DATA_FOLDER_NAME,
-    #                                                     MODEL_DATA_FOLDER_NAME,
-    #                                                     STABLE_FOLDER_NAME,
-    #                                                     MODEL_OBJS_FOLDER_NAME))
-
-    # stable_best_model_object_path = Path(os.path.join(DATA_FOLDER_NAME,
-    #                                                     MODEL_DATA_FOLDER_NAME,
-    #                                                     STABLE_FOLDER_NAME,
-    #                                                     BEST_MODEL_OBJ_FOLDER_NAME))
     
     excel_and_json_files_folder_path = Path(os.path.join(BaseArtifactConfig.artifact_dir,
                                                         MODEL_DATA_FOLDER_NAME,
@@ -200,24 +178,6 @@ class ModelTrainerConfig:
     final_all_model_results_json_file_path = Path(os.path.join(DATA_FOLDER_NAME,
                                                                DASHBOARD_DATA_FOLDER_NAME,
                                                         ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME))
-   
-    # stable_standard_scalar_path = Path(os.path.join(DATA_FOLDER_NAME,
-    #                                                         MODEL_DATA_FOLDER_NAME,
-    #                                                         STABLE_FOLDER_NAME,
-    #                                                         PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-    #                                                         STANDARD_SCALAR_OBJECT_NAME))
-                                           
-    # stable_smote_path = Path(os.path.join(DATA_FOLDER_NAME,
-    #                                                         MODEL_DATA_FOLDER_NAME,
-    #                                                         STABLE_FOLDER_NAME,
-    #                                                         PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-    #                                                         HANDLE_IMBALANCE_SMOTE_OBJECT_NAME))
-                    
-    # stable_pca_path = Path(os.path.join(DATA_FOLDER_NAME,
-    #                                                         MODEL_DATA_FOLDER_NAME,
-    #                                                         STABLE_FOLDER_NAME,
-    #                                                         PREPROCESSOR_FOLDER_STAGE_TWO_NAME,
-    #                                                         PCA_OBJECT_NAME))
     
     cluster_dataset_path =  os.path.join(BaseArtifactConfig.artifact_dir,
                                               TRAINING_DATA_FOLDER_NAME,
@@ -251,6 +211,7 @@ class S3Config:
     s3_prediction_preprocessor_two_path = champion_folder_path+"preprocessor_stage_two/"
     local_md5_check_file_path = local_prediction_models_path / "bestmodel_obj" / "Cluster_0" / "model.pkl"
     etag_file_path = "prediction_model_data/champion/bestmodel_obj/Cluster_0/model.pkl"
+    etag_data_json_file_path = Path(DATA_FOLDER_NAME) /  ETAG_DATA_JSON_FILE_NAME
 
 @dataclass
 class ModelEvaluationConfig:
@@ -284,6 +245,7 @@ class PredictionPipelineConfig:
     standard_scalar_obj_name = STANDARD_SCALAR_OBJECT_NAME
     pca_obj_name = PCA_OBJECT_NAME
     best_model_name = BEST_MODEL_NAME
+    best_model_xgb_name = BEST_MODEL_XGB_NAME
     predictions_data_path = BaseArtifactConfig.data_dir / PREDICTION_DATA_FOLDER_NAME / PREDICTION_DATA_FILE_NAME
     predictions_with_probabilities_data_path = os.path.join(BaseArtifactConfig.artifact_dir,PREDICTION_DATA_FOLDER_NAME,FINAL_PREDICTION_FILE_FOLDER_NAME,PREDICTION_DATA_FILE_NAME)
     prediction_with_rawdata_file_name = FINAL_PREDICTION_FILE_NAME

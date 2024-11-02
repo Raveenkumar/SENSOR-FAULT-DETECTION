@@ -113,6 +113,7 @@ ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME: str = "all_models_result.json"
 BEST_MODEL_RESULT_DATA_JSON_FILE_NAME: str = "best_model_result.json"
 EXCEL_AND_JSON_FILES_FOLDER_NAME: str = "excel_and_json_files"
 BEST_MODEL_NAME: str = "model.pkl"
+BEST_MODEL_XGB_NAME: str = "model.xgb"
 
 #s3 constants
 BUCKET_NAME:str = 'wafersensorsdata'
@@ -122,6 +123,7 @@ S3_CLIENT_DB_FOLDER_NAME: str = "client_db_data"
 S3_PREDICTION_DATA_FOLDERNAME: str = "predicted_files"
 DEFAULT_TRAINING_BATCH_FILES:str = "training_batch_files"
 LOCAL_PREDICTION_MODELS_FOLDER_NAME: str = "prediction_models"
+ETAG_DATA_JSON_FILE_NAME:str = "etag_data.json"
 
 # model evolution constants
 DAGSHUB_REPO_OWNER_NAME:str = 'Raveenkumar'

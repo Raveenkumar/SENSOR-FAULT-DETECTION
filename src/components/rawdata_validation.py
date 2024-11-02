@@ -13,9 +13,6 @@ from src.utilities.utils import (read_json,read_csv_file,
 from src.logger import logger
 from src.exception import SensorFaultException
 import pandas as pd
-from evidently import ColumnMapping
-from evidently.report import Report
-from evidently.metric_preset import DataDriftPreset
 from src.entity.artifact_entity import RawDataValidationArtifacts
 
 class RawDataValidation:
@@ -124,7 +121,7 @@ class RawDataValidation:
                     mismatch_columns_data.append(column_data)
                     continue
                     
-                # check if schema file column data is equal to raw file columns data or not
+                # check if schema file column datatype is equal to raw file columns datatype or not
                 if schema_file_columns_data[column] != raw_file_columns_data[column]:
                     column_data["schema_file"] = f"Column_name:{column}, Column_dtype:{schema_file_columns_data[column]}"
                     column_data["raw_file"] = f"Column_name:{column}, Column_dtype:{raw_file_columns_data[column]}"

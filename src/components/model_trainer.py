@@ -2,7 +2,7 @@ import pandas as pd
 import sys,os
 from src.exception import SensorFaultException
 from src.logger import logger
-from src.entity.config_entity import ModelTrainerConfig,ClusterConfig,PreprocessorConfig,ModelTunerConfig,BaseArtifactConfig,ModelEvaluationConfig
+from src.entity.config_entity import ModelTrainerConfig,ClusterConfig,PreprocessorConfig,ModelTunerConfig,ModelEvaluationConfig
 from src.components.model_tuner import ModelTuner
 from src.components.model_evaluation import ModelEvaluation
 from src.utilities.utils import (save_models_data,proper_conversion_for_excel_file,
@@ -10,7 +10,7 @@ from src.utilities.utils import (save_models_data,proper_conversion_for_excel_fi
                                  save_json,
                                  save_obj,
                                  copy_file,
-                                 create_folder_using_file_path)
+                                 create_folder_using_file_path)    
 
 class ModelTrainer:
     def __init__(self,config:ModelTrainerConfig,input_file:pd.DataFrame,modeltunerconfig:ModelTunerConfig,model_evolution_config:ModelEvaluationConfig):
@@ -29,7 +29,7 @@ class ModelTrainer:
         """
         try:
             logger.info("Start initialize model trainer process!")
-            all_models_results_cluster_wise= {}
+            all_models_results_cluster_wise = {}
             best_models_results_cluster_wise = {}
             dataset = self.input_file.copy()
             no_of_cluster = dataset[ClusterConfig.cluster_column_name].nunique()
@@ -48,10 +48,7 @@ class ModelTrainer:
                 model_tuner_artifacts = self.model_tuner.initialize_model_tuner_process(X,y)
                 logger.info(f"MODEL TUNER ARTIFACTS: {model_tuner_artifacts}")
                 
-                # exp_all_models_path = self.config.experiment_all_model_objects_path / str(cluster)
-                # exp_best_models_path = self.config.experiment_best_model_object_path / str(cluster)
-                # stable_all_models_path = self.config.stable_all_model_objects_path / str(cluster)
-                # stable_best_model_path = self.config.stable_best_model_object_path / str(cluster)
+               
                 models_mlflow_dict = {}
                 models_mlflow_dict[f'Cluster_{cluster}_svc'] = model_tuner_artifacts.svc_mlflow_dict
                 models_mlflow_dict[f'Cluster_{cluster}_gaussiannb'] = model_tuner_artifacts.gaussiannb_mlflow_dict
@@ -93,10 +90,6 @@ class ModelTrainer:
             logger.info(f"initialize_model_trainer :: create folders for storing cluster wise models results (all_model_results,best_model_results)")
             create_folder_using_file_path(self.config.all_model_results_excel_file_path)
             create_folder_using_file_path(self.config.all_model_results_json_file_path)
-            # create_folder_using_file_path(self.config.best_model_results_excel_file_path)
-            # create_folder_using_file_path(self.config.best_model_results_json_file_path)
-            # create_folder_using_file_path(self.config.experiment_standard_scalar_path)
-            # create_folder_using_file_path(self.config.stable_standard_scalar_path)
                         
             # save the data into excel file
             logger.info(f"initialize_model_trainer :: save the all_model_results into excel")
@@ -109,26 +102,6 @@ class ModelTrainer:
             save_model_result_excel(best_models_result_df,self.config.best_model_results_excel_file_path) 
             logger.info(f"initialize_model_trainer :: save the best_model_results into json")  
             save_json(self.config.best_model_results_json_file_path,best_models_results_cluster_wise)
-            
-            #save preprocessor stage two  objects(preprocessor,smote,pca)
-            # final_standard_scalar_path = find_final_path(experiment_file_path=self.config.experiment_standard_scalar_path,
-            #                                              stable_file_path=self.config.stable_standard_scalar_path)
-            
-            # final_smote_path = find_final_path(experiment_file_path=self.config.experiment_smote_path,
-            #                                              stable_file_path=self.config.stable_smote_path)
-            
-            # final_pca_path = find_final_path(experiment_file_path=self.config.experiment_pca_path,
-            #                                              stable_file_path=self.config.stable_pca_path)
-            
-            
-            # final_standard_scalar_path = self.config.standard_scalar_path
-            # final_smote_path = self.config.smote_path
-            # final_pca_path = self.config.pca_path
-            
-            # logger.info(f"initialize_model_trainer :: create folders for storing preprocessing_stage_two objects(scalar,smote,pca)")
-            # create_folder_using_file_path(final_standard_scalar_path)
-            # create_folder_using_file_path(final_smote_path)
-            # create_folder_using_file_path(final_pca_path)
             
         
             # copy files models results json files

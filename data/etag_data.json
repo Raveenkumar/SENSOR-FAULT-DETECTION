@@ -1,0 +1,17 @@
+{
+    "prediction_model_data/champion/bestmodel_obj/Cluster_0/best_model_result.json": "8daf85783db476ae84b8eaa9f442b96e",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_0/handle_imbalance_smote.dill": "cd7916157b6495f7123de59b72937c26",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_0/model.pkl": "b159fe9c485c1dd250bc58a81c80945d",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_0/pca.dill": "9e169a4a456cd678f5b89f13f32908da",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_0/standard_scalar.dill": "d6692364c4a6fc13399a0bd07bb7f7c3",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_1/best_model_result.json": "69e08f80a8d3a9af135a4855be4f02c1",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_1/handle_imbalance_smote.dill": "5fe31ba452a56b37890d746df0d723b3",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_1/model.pkl": "fcf0a37dc9dfe9d925190c881b787da9",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_1/pca.dill": "fb07feb03a8367ec00fe9945ee117314",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_1/standard_scalar.dill": "d1b1d113685dc012ad3fec84db5b876d",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_2/best_model_result.json": "8daf85783db476ae84b8eaa9f442b96e",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_2/handle_imbalance_smote.dill": "0a96be1cf01d3d976d3c24d8f5e89cc1",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_2/model.pkl": "25407ee5fa2231cb80f9997b08b30840",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_2/pca.dill": "581847304499675daafb3ae9ce9e61b0",
+    "prediction_model_data/champion/bestmodel_obj/Cluster_2/standard_scalar.dill": "259e18c3dc006f1beb0a7ff90a0e52a1"
+}

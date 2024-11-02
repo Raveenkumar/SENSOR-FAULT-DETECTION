@@ -8,11 +8,11 @@
             },
             "training_score": 1.0,
             "test_score": 1.0,
-            "accuracy": 1.0,
-            "recall": 1.0,
+            "accuracy": 0.9655172413793104,
+            "recall": 0.95,
             "precision": 1.0,
-            "f1_score": 1.0,
-            "auc_score": 1.0
+            "f1_score": 0.9743589743589743,
+            "auc_score": 0.975
         },
         "gaussiannb": {
             "best_param": {
@@ -74,11 +74,11 @@
             },
             "training_score": 1.0,
             "test_score": 1.0,
-            "accuracy": 1.0,
+            "accuracy": 0.96,
             "recall": 1.0,
-            "precision": 1.0,
-            "f1_score": 1.0,
-            "auc_score": 1.0
+            "precision": 0.9259259259259259,
+            "f1_score": 0.9615384615384616,
+            "auc_score": 0.9600000000000001
         },
         "gaussiannb": {
             "best_param": {
@@ -124,11 +124,11 @@
             },
             "training_score": 1.0,
             "test_score": 1.0,
-            "accuracy": 1.0,
+            "accuracy": 0.98,
             "recall": 1.0,
-            "precision": 1.0,
-            "f1_score": 1.0,
-            "auc_score": 1.0
+            "precision": 0.9615384615384616,
+            "f1_score": 0.9803921568627451,
+            "auc_score": 0.98
         }
     },
     "Cluster:2": {
@@ -148,15 +148,15 @@
         },
         "gaussiannb": {
             "best_param": {
-                "var_smoothing": 1e-05
+                "var_smoothing": 1e-09
             },
-            "training_score": 0.9985141158989599,
+            "training_score": 1.0,
             "test_score": 1.0,
-            "accuracy": 0.9969879518072289,
-            "recall": 0.9935483870967742,
+            "accuracy": 0.9793388429752066,
+            "recall": 0.9557522123893806,
             "precision": 1.0,
-            "f1_score": 0.9967637540453075,
-            "auc_score": 0.9967741935483871
+            "f1_score": 0.9773755656108597,
+            "auc_score": 0.9778761061946903
         },
         "randomforest": {
             "best_param": {
@@ -168,13 +168,13 @@
                 "criterion": "entropy",
                 "bootstrap": false
             },
-            "training_score": 1.0,
+            "training_score": 0.9999999999999999,
             "test_score": 1.0,
-            "accuracy": 1.0,
-            "recall": 1.0,
+            "accuracy": 0.9958677685950413,
+            "recall": 0.9911504424778761,
             "precision": 1.0,
-            "f1_score": 1.0,
-            "auc_score": 1.0
+            "f1_score": 0.9955555555555555,
+            "auc_score": 0.995575221238938
         },
         "xgbclassifier": {
             "best_param": {

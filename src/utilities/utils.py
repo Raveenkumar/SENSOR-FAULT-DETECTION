@@ -12,6 +12,7 @@ from typing import Dict, Any
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
+import xgboost as xgb
 from sklearn.metrics import confusion_matrix,ConfusionMatrixDisplay
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
@@ -25,7 +26,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from src.logger import logger
-from mypy_boto3_s3.service_resource import Bucket,S3ServiceResource 
 from src.exception import SensorFaultException
 from src.entity.config_entity import (BaseArtifactConfig,
                                       ModelTrainerConfig,
@@ -385,11 +385,14 @@ def load_obj(file_path:Path)-> object:
         object: pkl object
     """
     try:
-        
         if os.path.exists(file_path):
             if os.path.basename(file_path).endswith(".pkl"):
                 with open(file_path,mode='rb') as file_obj:
                     result = pickle.load(file=file_obj)
+            elif os.path.basename(file_path).endswith(".xgb"):
+                loaded_model = xgb.Booster()
+                loaded_model.load_model(file_path)
+                result = loaded_model
             else:
                 with open(file_path,mode='rb') as file_obj:
                     result = dill.load(file=file_obj)        
@@ -730,7 +733,20 @@ def models_auc_threshold_satisfied() -> bool:
             logger.error(msg=f"models_auc_threshold_satisfied :: Status:Failed :: error_message:{error_message}")
             raise error_message     
 
-def clear_artifact_folder(project_root:str):
+def clear_artifact_folder(project_root:str) -> None:
+    """
+    Clears the contents of the 'artifacts' directory located in the specified project root.
+
+    This function checks if the 'artifacts' directory exists within the given project root path.
+    If it does, it iterates through its contents and removes all files, symbolic links, and subdirectories.
+
+    Args:
+        project_root (str): The root directory of the project where the 'artifacts' folder is located.
+
+    Raises:
+        SensorFaultException: If an error occurs while attempting to delete files or directories, 
+        an exception is raised with details about the failure.
+    """
     artifact_dir = os.path.join(project_root, 'artifacts')  # 'artifacts' folder in the root
     logger.info(f'project root folder: {project_root}')
     logger.info(f'artifact_dir folder: {artifact_dir}')
@@ -755,7 +771,17 @@ def clear_artifact_folder(project_root:str):
             logger.error(msg=f"clear_artifact_folder :: Status:Failed :: error_message:{error_message}")
             raise error_message 
 
-def clear_dashboard_folder():
+def clear_dashboard_folder() -> None:
+    """
+    Clears the contents of the dashboard directory specified in the BaseArtifactConfig.
+
+    This function checks if the dashboard directory exists. If it does, it removes the entire directory and 
+    all of its contents using shutil.rmtree.
+
+    Raises:
+        SensorFaultException: If an error occurs while attempting to delete the dashboard directory,
+        an exception is raised with details about the failure.
+    """
     try:
         if os.path.exists(BaseArtifactConfig.dashboard_dir):
             shutil.rmtree(BaseArtifactConfig.dashboard_dir)
@@ -766,7 +792,17 @@ def clear_dashboard_folder():
             logger.error(msg=f"clear_dashboard_folder :: Status:Failed :: error_message:{error_message}")
             raise error_message        
 
-def create_dashboard_folder():
+def create_dashboard_folder() -> None:
+    """
+    Creates the dashboard directory specified in the BaseArtifactConfig.
+
+    This function attempts to create the dashboard directory. If the directory already exists,
+    it will not raise an error due to the `exist_ok=True` parameter.
+
+    Raises:
+        SensorFaultException: If an error occurs while attempting to create the dashboard directory,
+        an exception is raised with details about the failure.
+    """
     try:
         os.makedirs(BaseArtifactConfig.dashboard_dir,exist_ok= True)
         logger.info(f"create_dashboard_folder :: Status:Success")
@@ -776,11 +812,24 @@ def create_dashboard_folder():
             logger.error(msg=f"create_dashboard_folder :: Status:Failed :: error_message:{error_message}")
             raise error_message  
      
-def remove_file(file_path:Path):
+def remove_file(file_path:Path) -> None:
+    """
+    Removes a file at the specified file path.
+
+    This function checks if the file exists at the given path, and if it does, 
+    it deletes the file. If the file does not exist, no action is taken.
+
+    Args:
+        file_path (Path): The path of the file to be removed.
+
+    Raises:
+        SensorFaultException: If an error occurs while attempting to remove the file,
+        an exception is raised with details about the failure.
+    """
     try:
         if os.path.exists(file_path):
             os.remove(file_path)
-            logger.info(f"remove_file :: deleted training validation file :: file_path : {file_path}")
+            logger.info(f"remove_file :: Status:Deleted :: file_path : {file_path}")
         
     except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -813,7 +862,23 @@ def check_folder_empty(folder_path:Path) -> bool:
             logger.error(msg=f"check_folder_empty :: Status:Failed :: error_message:{error_message}")
             raise error_message
                          
-def save_bad_file_names():
+def save_bad_file_names() -> None:
+    """
+    Saves the names of bad files to a JSON file.
+
+    This function retrieves the list of files from the specified directory 
+    containing bad raw data. It then creates a folder for the JSON file (if it 
+    does not already exist) and saves the list of bad file names into a JSON 
+    format.
+
+    The JSON file is stored at the path specified by 
+    `PredictionRawDataValidationConfig.dashboard_bad_file_names_json_path`.
+
+    Raises:
+        SensorFaultException: If an error occurs while attempting to read the 
+        file names, create a folder, or save the JSON data, an exception is raised 
+        with details about the failure.
+    """
     try:
         files_data = {}
         files_list = os.listdir(PredictionRawDataValidationConfig.bad_raw_data_folder_path)
@@ -827,7 +892,23 @@ def save_bad_file_names():
             logger.error(msg=f"save_bad_file_names :: Status:Failed :: error_message:{error_message}")
             raise error_message 
 
-def get_bad_file_names():
+def get_bad_file_names() -> list[Any]:
+    """
+    Retrieves the names of bad files from a JSON file.
+
+    This function reads a JSON file specified by 
+    `PredictionRawDataValidationConfig.dashboard_bad_file_names_json_path`, 
+    which contains a list of bad file names under the key 'bad_files'. 
+    It returns this list as a Python list.
+
+    Returns:
+        list[Any]: A list containing the names of bad files.
+
+    Raises:
+        SensorFaultException: If an error occurs while reading the JSON file 
+        or processing its contents, an exception is raised with details about 
+        the failure.
+    """
     try:
         files_data = read_json(PredictionRawDataValidationConfig.dashboard_bad_file_names_json_path)
         logger.info(f"get_bad_file_names :: Status:Success")
@@ -838,7 +919,23 @@ def get_bad_file_names():
             logger.error(msg=f"get_bad_file_names :: Status:Failed :: error_message:{error_message}")
             raise error_message
                              
-def get_local_file_md5(file_path):
+def get_local_file_md5(file_path) -> str:
+    """
+    Calculates the MD5 hash of a local file.
+
+    This function opens a file located at the specified `file_path`, reads it in chunks, 
+    and computes its MD5 hash. The resulting hash is returned as a hexadecimal string.
+
+    Args:
+        file_path (str): The path to the local file for which the MD5 hash is to be computed.
+
+    Returns:
+        str: The MD5 hash of the file, represented as a hexadecimal string.
+
+    Raises:
+        SensorFaultException: If an error occurs while opening the file or computing the hash, 
+        an exception is raised with details about the failure.
+    """
     try:
         hash_md5 = hashlib.md5()
         with open(file_path, "rb") as f:
@@ -852,7 +949,23 @@ def get_local_file_md5(file_path):
             logger.error(msg=f"get_local_file_md5 :: Status:Failed :: error_message:{error_message}")
             raise error_message
 
-def save_confusion_matrix_image(y_test,y_pred,image_path:Path):
+def save_confusion_matrix_image(y_test,y_pred,image_path:Path) -> None:
+    """
+    Generates and saves a confusion matrix image for the given true and predicted labels.
+
+    This function computes the confusion matrix based on the true labels (`y_test`) 
+    and the predicted labels (`y_pred`). It visualizes the confusion matrix using Matplotlib 
+    and saves the plot to the specified image path.
+
+    Args:
+        y_test (array-like): True labels of the test dataset.
+        y_pred (array-like): Predicted labels generated by the model.
+        image_path (Path): The path where the confusion matrix image will be saved.
+
+    Raises:
+        SensorFaultException: If an error occurs during the computation of the confusion matrix,
+        visualization, or saving the image, an exception is raised with details about the failure.
+    """
     try:
         # Generate confusion matrix
         cm = confusion_matrix(y_test, y_pred)
@@ -872,7 +985,27 @@ def save_confusion_matrix_image(y_test,y_pred,image_path:Path):
             logger.error(msg=f"get_local_file_md5 :: Status:Failed :: error_message:{error_message}")
             raise error_message        
                           
-def send_datadrift_mail_team(url:str,s3_prediction_folder_name:str):
+def send_datadrift_mail_team(url:str,s3_prediction_folder_name:str) -> None:
+    """
+    Sends an email notification to the data science team regarding detected data drift.
+
+    This function constructs an HTML email alerting the team about significant data drift 
+    identified in model performance. The email includes a link to review the full data drift 
+    report and mentions the associated S3 prediction folder containing relevant data files.
+
+    Args:
+        url (str): The URL link to the data drift report for review.
+        s3_prediction_folder_name (str): The name of the S3 prediction folder containing 
+                                           additional CSV files and data.
+
+    Raises:
+        SensorFaultException: If an error occurs during the email composition, connection to 
+        the SMTP server, or sending the email, an exception is raised with details about the 
+        failure.
+
+    Returns:
+        None
+    """
     try:
         # Email configuration
         sender_email = os.getenv('SENDER_EMAIL')
@@ -1006,7 +1139,36 @@ def send_datadrift_mail_team(url:str,s3_prediction_folder_name:str):
             logger.error(msg=f"send_datadrift_mail :: Status:Failed :: error_message:{error_message}")
             raise error_message         
         
-def send_datadrift_mail_client(excel_file_path: str):
+def send_datadrift_mail_client(excel_file_path: str) -> None:
+    """
+    Sends an email to the client notifying them of detected data drift and requesting feedback.
+
+    This function constructs an HTML email containing information about the data drift detected 
+    in the model predictions, along with an attached Excel file containing the relevant data.
+    The email is sent using the SMTP protocol through a Gmail account.
+
+    Parameters:
+    ----------
+    excel_file_path : str
+        The file path to the Excel file that contains the predictions or data requiring client feedback.
+
+    Returns:
+    -------
+    None
+
+    Raises:
+    ------
+    SensorFaultException
+        If an error occurs during the process of sending the email, including issues with 
+        environment variables, file handling, or SMTP operations.
+
+    Notes:
+    ------
+    - Ensure that the environment variables for SENDER_EMAIL, SENDER_EMAIL_PASSWORD, and 
+      RECIPIENT_EMAIL are set correctly before calling this function.
+    - The email includes an alert indicating the urgency of the feedback required for data 
+      drift management.
+    """
     try:
         # Email configuration
         sender_email = os.getenv('SENDER_EMAIL')

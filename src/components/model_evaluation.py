@@ -1,5 +1,4 @@
 import sys
-from urllib.parse import urlparse
 import mlflow
 from mlflow.exceptions import RestException
 import mlflow.sklearn
@@ -102,12 +101,15 @@ class DataDrift:
     def __init__(self,config:DataDriftConfig):
         self.config = config
     
-    def find_data_drift(self,original_data:DataFrame, reference_data:DataFrame):
-        """find_data_drift _summary_
+    def find_data_drift(self,original_data:DataFrame, reference_data:DataFrame) -> bool:
+        """find_data_drift method used for find the drift of data (trained data & recent prediction data)
 
         Args:
-            original_data (DataFrame): _description_
-            reference_data (DataFrame): _description_
+            original_data (DataFrame): Training data
+            reference_data (DataFrame): Prediction data
+        
+        Returns:
+            Status: True if drift detected otherwise return False   
         """
         try:
             drift_schema = read_json(self.config.drift_schema_file_path)
