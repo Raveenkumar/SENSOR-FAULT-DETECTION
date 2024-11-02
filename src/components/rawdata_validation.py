@@ -7,13 +7,12 @@ from src.utilities.utils import (read_json,read_csv_file,
                                  create_folder_using_file_path,
                                  create_folder_using_folder_path,copy_file,
                                  create_zip_from_folder,
-                                 save_json)
+                                 save_json,
+                                 remove_file,
+                                 save_bad_file_names)
 from src.logger import logger
 from src.exception import SensorFaultException
 import pandas as pd
-from evidently import ColumnMapping
-from evidently.report import Report
-from evidently.metric_preset import DataDriftPreset
 from src.entity.artifact_entity import RawDataValidationArtifacts
 
 class RawDataValidation:
@@ -122,7 +121,7 @@ class RawDataValidation:
                     mismatch_columns_data.append(column_data)
                     continue
                     
-                # check if schema file column data is equal to raw file columns data or not
+                # check if schema file column datatype is equal to raw file columns datatype or not
                 if schema_file_columns_data[column] != raw_file_columns_data[column]:
                     column_data["schema_file"] = f"Column_name:{column}, Column_dtype:{schema_file_columns_data[column]}"
                     column_data["raw_file"] = f"Column_name:{column}, Column_dtype:{raw_file_columns_data[column]}"
@@ -212,43 +211,58 @@ class RawDataValidation:
             create_folder_using_folder_path(self.bad_raw_data_path)
             create_folder_using_file_path(self.validation_report_file_path)
             
+            # remove bad_raw_zip if exists to avoid getting previous data
+            remove_file(self.config.dashboard_bad_raw_zip_file_path)
+            
+            
             for file in os.listdir(path=self.data_files_path):
                 file_path = Path(os.path.join(self.data_files_path, file))
+            
+                
                 #read raw_data
                 raw_dataframe = read_csv_file(file_path=file_path)
                 if self.filename_validation(file_name=file)=="Failed":
-                    shutil.move(src=file_path, dst=self.bad_raw_data_path)
+                    shutil.copy2(src=file_path, dst=self.bad_raw_data_path)
+                    os.remove(file_path)
                     continue
 
                 # Check number of columns validation
                 if self.numberofcolumns_validation(file_name=file,dataframe=raw_dataframe)=="Failed":
-                    shutil.move(src=file_path, dst=self.bad_raw_data_path)
+                    shutil.copy2(src=file_path, dst=self.bad_raw_data_path)
+                    os.remove(file_path)
                     continue
                 
                 # Check number of columns validation
                 if self.columndata_whole_missing_validation(file_name=file,dataframe=raw_dataframe)=="Failed":
-                    shutil.move(src=file_path, dst=self.bad_raw_data_path)
+                    shutil.copy2(src=file_path, dst=self.bad_raw_data_path)
+                    os.remove(file_path)
                     continue
                 
                 # Check columns name validation
                 if self.columnsdata_validation(file_name=file,dataframe=raw_dataframe)=="Failed":
-                    shutil.move(src=file_path, dst=self.bad_raw_data_path)
+                    shutil.copy2(src=file_path, dst=self.bad_raw_data_path)
+                    os.remove(file_path)
                     continue
 
                 # If all validations pass, move to good_raw_folder
-                shutil.move(src=file_path, dst=self.good_raw_data_path)
+                shutil.copy2(src=file_path, dst=self.good_raw_data_path)
+                os.remove(file_path)
             
             #for validation report show only default training
             test_data = {"Dashboard":"show_validation_report"}
             save_json(self.config.dashboard_validation_show,test_data)
             # copy validation report file to data folder 
             logger.info(f"initialize_rawdata_validation_process :: copy the validation file into data folder for report")
+            create_folder_using_file_path(self.dashboard_validation_report_file_path)
             copy_file(self.validation_report_file_path,self.dashboard_validation_report_file_path)
             
             # zip the bad raw data only prediction
+            
             if self.bad_raw_data_path == PredictionRawDataValidationConfig.bad_raw_data_folder_path:
+                create_folder_using_file_path(self.config.dashboard_bad_raw_zip_file_path)
                 logger.info(f"initialize_rawdata_validation_process :: zip the bad data files for providing")
                 create_zip_from_folder(self.bad_raw_data_path,self.config.dashboard_bad_raw_zip_file_path)
+                save_bad_file_names() # save the bad file names
                 
             result = RawDataValidationArtifacts(good_raw_data_folder=self.good_raw_data_path,
                                                 bad_raw_data_folder=self.bad_raw_data_path,

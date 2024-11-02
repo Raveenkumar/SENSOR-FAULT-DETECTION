@@ -13,15 +13,15 @@
 # s3  = SimpleStorageService()
 
 # local_path = Path("Training_Batch_files")
-# s3_folder = 'client_db_data/training_batch_files/'
+# s3_folder = 'client_db_data/training_batch_files
 # bucket_obj = s3.get_bucket(BUCKET_NAME)
 
 # s3.download_files_from_s3(bucket_obj=bucket_obj,
 #                           local_folder_path=local_path,
 #                           s3_subfolder_path=s3_folder)
 
-from dotenv import load_dotenv
-import os
-load_dotenv()
+from src.pipeline.prediction_pipeline import PredictionPipeline
 
-print(os.getenv('mlflow_uri'))
+folder_path = r"C:\Users\RAVEEN\Downloads\testing_data\batch3"
+prediction__pipeline = PredictionPipeline(folder_path) # type: ignore
+prediction__pipeline.initialize_pipeline()

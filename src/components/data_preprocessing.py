@@ -13,7 +13,7 @@ from src.entity.artifact_entity import PreprocessorArtifacts
 
 
 preprocessing_results = {}
-
+target_column = PreprocessorConfig.target_feature
 class Preprocessor:
     def __init__(self,config:PreprocessorConfig, input_file:pd.DataFrame) -> None:
         self.input_input_file = input_file
@@ -62,6 +62,8 @@ class Preprocessor:
             no_of_dropped_rows = before_shape[0]-after_shape[0]
             preprocessing_results['no_of_duplicate_rows']=no_of_dropped_rows
             logger.info(f'Dropped Duplicate rows :: Status: Success :: no_of_rows_dropped:{no_of_dropped_rows}')
+            create_folder_using_file_path(self.config.non_duplicate_data_clear_df_path)
+            df.to_csv(self.config.non_duplicate_data_clear_df_path,index=False)
             return df
         
         except Exception as e:
@@ -168,9 +170,10 @@ class Preprocessor:
     class HandleNaNValues(BaseEstimator, TransformerMixin):
         """HandleNaNValues:It is custom Transformer used for handle nan values
         """
-        def __init__(self):
+        def __init__(self, config: PreprocessorConfig):
             self.columns_to_drop = []
             self.knn_imputer = KNNImputer(n_neighbors=5, weights='uniform')
+            self.config = config 
 
         def fit(self, X, y=None):
             try:
@@ -184,6 +187,7 @@ class Preprocessor:
                 # Prepare data for imputation by dropping the columns
                 X_to_impute = X.drop(columns=self.columns_to_drop, errors='ignore')
 
+                X_to_impute = X_to_impute.drop(columns=[self.config.target_feature])
                 # Fit the KNN imputer on the remaining data
                 self.knn_imputer.fit(X_to_impute)
                 logger.info("handle nan values KNN Imputer fitted successfully.")
@@ -200,10 +204,16 @@ class Preprocessor:
                 X = X.drop(columns=self.columns_to_drop, errors='ignore')
                 logger.info(f"Columns to drop due to high NaN percentage: {self.columns_to_drop}")
                 # logger.info(f"handle nan values Applied column dropping. Remaining columns: {X.columns.tolist()}")
-                
-                # Apply KNN imputation using the fitted imputer
-                imputed_data = self.knn_imputer.transform(X)
-                result_df = pd.DataFrame(imputed_data, columns=X.columns)
+                if self.config.target_feature in X.columns:
+                    X_to_impute = X.drop(columns=[self.config.target_feature])
+                    imputed_data = self.knn_imputer.transform(X_to_impute)
+                    X_imputed = pd.DataFrame(imputed_data, columns=X_to_impute.columns)
+                    
+                     # Concatenate the target column back to the DataFrame
+                    X_imputed[self.config.target_feature] = X[self.config.target_feature].values
+                else:
+                    imputed_data = self.knn_imputer.transform(X)
+                    X_imputed = pd.DataFrame(imputed_data, columns=X.columns)
                 
                 logger.info(f"handle nan values imputed using KNN Imputer. total_imputed_columns:{len(self.nan_imputed_columns)} :: columns_list:{self.nan_imputed_columns}")
             
@@ -211,7 +221,7 @@ class Preprocessor:
                 logger.error(f"An error occurred during transformation: {e}")
                 raise e
             
-            return result_df
+            return X_imputed
 
         def fit_transform(self, X, y=None):
             try:
@@ -302,10 +312,10 @@ class Preprocessor:
 
             preprocessing_pipeline = Pipeline(
                 [
-                    ("drop_unwanted_columns", drop_unwanted_columns_),
                     ("drop_duplicate_rows", drop_duplicate_rows_),
+                    ("drop_unwanted_columns", drop_unwanted_columns_),
                     ("drop_zero_std_columns", Preprocessor.HandleZeroStdColumns(config=self.config)),  
-                    ("handle_nan_values", Preprocessor.HandleNaNValues()),           
+                    ("handle_nan_values", Preprocessor.HandleNaNValues(config=self.config)),           
                     ("handle_high_skew_columns", Preprocessor.HandleHighSkewColumns(config=self.config)),
                     ("handle_outlier", Preprocessor.OutlierHandler(config=self.config))
                 ]
@@ -325,7 +335,8 @@ class Preprocessor:
             create_folder_using_file_path(self.config.preprocessor_json_file_path)
             save_json(self.config.preprocessor_json_file_path,preprocessing_results)
             #copy file to data dir
-            copy_file(self.config.preprocessor_json_file_path,BaseArtifactConfig.data_dir)
+            copy_file(src_file_path=self.config.preprocessor_json_file_path,
+                      dst_folder_path=self.config.dashboard_preprocessor_json_file_path)
             
             logger.info("Ended the initialize_preprocessing process!")
             return result

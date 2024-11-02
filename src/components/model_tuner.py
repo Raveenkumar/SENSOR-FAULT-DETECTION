@@ -1,11 +1,8 @@
 import sys
 from typing import Any
-from pathlib import Path
 import pandas as pd
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split ,StratifiedKFold,RandomizedSearchCV
-from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.over_sampling import SMOTE
 from sklearn.decomposition import PCA
 from sklearn.base import BaseEstimator
@@ -23,7 +20,7 @@ from src.exception import SensorFaultException
 from src.entity.config_entity import  ModelTunerConfig
 from src.utilities.utils import model_result
 from src.entity.artifact_entity import ModelTunerArtifacts
-import numpy as np
+
 
 
 
@@ -57,7 +54,7 @@ class ModelTuner:
             
             random_search = RandomizedSearchCV(estimator=model,
                                                param_distributions=params,
-                                               n_iter=20,
+                                               n_iter=5,
                                                cv=self.stratifiedKfold_validation(),
                                                scoring='roc_auc',
                                                error_score='raise',
@@ -97,12 +94,12 @@ class ModelTuner:
         try:
             logger.info(msg=f"get_best_svc_parameters :: Status:Started")
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=100)
-            model = self.model_build(model=SVC(),params=self.config.svc_param_grid)
+            model = self.model_build(model=SVC(probability=True),params=self.config.svc_param_grid)
             model.fit(X_train, y_train)
 
             logger.info(msg=f"get_best_svc_parameters :: Status:Finish") 
             
-            return model_result(model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+            return model_result(model_name="svc",model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
         
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -141,7 +138,7 @@ class ModelTuner:
 
             logger.info(msg=f"get_best_gaussiannb_parameters :: Status:Finish") 
             
-            return model_result(model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+            return model_result(model_name="gaussiannb",model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
         
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -179,7 +176,7 @@ class ModelTuner:
             model.fit(X_train, y_train)
 
             logger.info(msg=f"get_best_randomforest_parameters :: Status:Finish") 
-            return model_result(model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+            return model_result(model_name="randomforest",model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
         
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -217,7 +214,7 @@ class ModelTuner:
 
             logger.info(msg=f"get_best_xgbclassifier_parameters :: Status:Finish") 
             
-            return model_result(model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+            return model_result(model_name="xgbclassifier",model=model, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
         
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)
@@ -229,7 +226,8 @@ class ModelTuner:
         """find_best_model :Used for find Best model
 
         Args:
-            models_data (dict): all training models data
+            models_data (dict): all training models data  in single dict
+            models_result_data (dict): all training models result data in single dict
 
         Raises:
             error_message: Custom Exception
@@ -243,29 +241,25 @@ class ModelTuner:
             max_auc_score = max(auc_scores.values())
             model_results ={}
             
-            if self.config.auc_score_threshold_value < max_auc_score:
-                if auc_scores['xgbclassifier']== max_auc_score:
-                    logger.info(f"find_best_model:: Status:Success :: Model_Data:'xgbclassifier'")
-                    model_results["xgbclassifier"]=models_results_data['xgbclassifier']
-                    return models_object_data['xgbclassifier'], model_results
-                    
-                elif auc_scores['randomforest']== max_auc_score:
-                    logger.info(f"find_best_model:: Status:Success :: Model_Data:'randomforest'")
-                    model_results["randomforest"]=models_results_data['randomforest']
-                    return models_object_data['randomforest'], model_results
+            if auc_scores['xgbclassifier']== max_auc_score:
+                logger.info(f"find_best_model:: Status:Success :: Model_Data:'xgbclassifier'")
+                model_results["xgbclassifier"]=models_results_data['xgbclassifier']
+                return models_object_data['xgbclassifier'], model_results
+                
+            elif auc_scores['randomforest']== max_auc_score:
+                logger.info(f"find_best_model:: Status:Success :: Model_Data:'randomforest'")
+                model_results["randomforest"]=models_results_data['randomforest']
+                return models_object_data['randomforest'], model_results
 
-                elif auc_scores['svc']== max_auc_score:
-                    logger.info(f"find_best_model:: Status:Success :: Model_Data:'svc'")
-                    model_results["svc"]=models_results_data['svc']
-                    return models_object_data['svc'], model_results     
-                        
-                elif auc_scores['gaussiannb']== max_auc_score:
-                    logger.info(f"find_best_model:: Status:Success :: Model_Data:'gaussiannb'")
-                    model_results["gaussiannb"] = models_results_data['gaussiannb']
-                    return models_object_data['gaussiannb'], model_results
-            else:    
-                logger.warning("find_best_model:: Status: Failed :: No specified model matched the max AUC score.")
-                return () # get from old stable model
+            elif auc_scores['svc']== max_auc_score:
+                logger.info(f"find_best_model:: Status:Success :: Model_Data:'svc'")
+                model_results["svc"]=models_results_data['svc']
+                return models_object_data['svc'], model_results     
+                    
+            elif auc_scores['gaussiannb']== max_auc_score:
+                logger.info(f"find_best_model:: Status:Success :: Model_Data:'gaussiannb'")
+                model_results["gaussiannb"] = models_results_data['gaussiannb']
+                return models_object_data['gaussiannb'], model_results
             
         except Exception as e:
             error_message = SensorFaultException(error_message=str(e),error_detail=sys)

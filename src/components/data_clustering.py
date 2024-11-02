@@ -1,6 +1,5 @@
 import pandas  as pd
 import sys,os
-from numpy import ndarray
 from typing import Any
 from kneed import KneeLocator
 from sklearn.cluster import KMeans

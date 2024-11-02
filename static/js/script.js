@@ -1,6 +1,28 @@
 document.getElementById('predictBtn').addEventListener('click', function() {
-    // Navigate to the dashboard after clicking the prediction button
-    window.location.href = '/dashboard'; // Ensure this path matches the FastAPI route
+    const loadingAnimation = document.getElementById('loading');
+    loadingAnimation.style.display = 'block'; // Show loading animation
+
+    // First, trigger the prediction API call
+    fetch('/data_prediction', { 
+        method: 'POST',
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingAnimation.style.display = 'none'; // Hide loading animation
+        // Check if prediction was successful
+        if (data.message === "Prediction successful!") {
+            alert('Prediction completed successfully!');
+            // After the prediction is successful, navigate to the dashboard
+            window.location.href = '/dashboard';
+        } else {
+            alert('Prediction failed!');
+        }
+    })
+    .catch(error => {
+        loadingAnimation.style.display = 'none'; // Hide loading animation
+        console.error('Error during prediction:', error);
+        alert('Prediction failed!');
+    });
 });
 
 // adding training
@@ -14,8 +36,8 @@ document.getElementById('uploadForm').addEventListener('submit', function(event)
         formData.append('files', file);
     }
 
-    // Upload files to prediction pipeline
-    fetch('/predict', {
+    // Upload files to the correct endpoint
+    fetch('/upload', {  // Corrected endpoint
         method: 'POST',
         body: formData
     })
@@ -27,7 +49,6 @@ document.getElementById('uploadForm').addEventListener('submit', function(event)
     })
     .catch(error => console.error('Error uploading files:', error));
 });
-
 
 
 // Training Button Click Event

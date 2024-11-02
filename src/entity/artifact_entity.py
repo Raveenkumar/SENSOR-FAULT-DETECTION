@@ -45,3 +45,6 @@ class ModelTunerArtifacts:
     randomforest_mlflow_dict:dict
     xgbclassifier_mlflow_dict:dict
 
+@dataclass
+class PredictionPipelineArtifacts:
+    prediction_status : bool

@@ -2,7 +2,6 @@ import os,sys
 from pathlib import Path
 from typing import Union
 import pandas as pd
-import numpy as np
 from src.logger import logger
 from src.exception import SensorFaultException
 from src.entity.artifact_entity import RawDataValidationArtifacts,RawDataTransformationArtifacts

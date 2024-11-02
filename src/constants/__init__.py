@@ -7,10 +7,16 @@ from datetime import datetime
 ARTIFACT_FOLDER_NAME:str = "artifacts"
 DATA_FOLDER_NAME:str = 'data'
 MODEL_DATA_FOLDER_NAME: str = "model_data"
+DASHBOARD_DATA_FOLDER_NAME: str = "dashboard_data"
+
 
 #logs constants
 LOG_FOLDER_NAME:str = "logs"
 LOG_FILE_NAME:str = f"{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.log"
+
+
+#data ingestion constants
+FINAL_FILE_TWO_NAME:str = 'final_file_prediction.csv'
 
 # validation constants
 REGEX_PATTERN :str = "wafer_(0[1-9]|[12][0-9]|3[01])(0[1-9]|1[0-2])\d{4}_(0[0-9]|1[0-9]|2[0-3])([0-5][0-9]){2}\.csv"   # type: ignore
@@ -18,14 +24,14 @@ TRAINING_BATCH_FILES_PATH: str = "artifacts/Client_DB_Data/training_batch_files"
 PREDICTION_BATCH_FILES_PATH: str = "artifacts/Client_DB_Data/prediction_batch_files"
 TRAINING_DATA_FOLDER_NAME: str = "training_data"
 PREDICTION_DATA_FOLDER_NAME: str = 'prediction_data'
-PREDICTION_RAW_DATA: str = "prediction_raw_data"
+PREDICTION_BATCH_DATA: str = "prediction_batch_files"
 GOOD_RAW_DATA_FOLDER_NAME: str = "good_raw_data"
 BAD_RAW_DATA_FOLDER_NAME: str = "bad_raw_data"
 EVALUATION_DATA_FOLDER_NAME: str  = "evaluation_data"
 TRAINING_VALIDATION_LOG_FILE: str = "training_validation_logs.xlsx"
 PREDICTION_VALIDATION_LOG_FILE: str = "prediction_validation_logs.xlsx"
 BAD_RAW_ZIP_FILE_NAME:str = "bad_raw_data.zip"
-
+BAD_FILE_NAMES_FILE_NAME:str = "bad_file_names.json"
 
 # transformation constants
 OLD_WAFER_COLUMN_NAME: str = "Unnamed: 0"
@@ -45,6 +51,7 @@ STABLE_FOLDER_NAME:str = "stable_model_data"
 PREPROCESSOR_FOLDER_NAME:str = "preprocessor_stage_one"
 PREPROCESSOR_OBJECT_NAME:str = "preprocessor_obj.dill"
 PREPROCESSOR_JSON_FILE_NAME:str = "preprocessing_report.json"
+NON_DUPLICATE_DF_NAME :str = "final_non_duplicate_df.csv"
 
 # cluster constants
 CLUSTER_COLUMN_NAME:str = "Cluster"
@@ -100,18 +107,41 @@ HANDLE_IMBALANCE_SMOTE_OBJECT_NAME : str = "handle_imbalance_smote.dill"
 PCA_OBJECT_NAME: str = "pca.dill"
 EXCEL_FILES_FOLDER_NAME : str = "excel_files"
 JSON_FILES_FOLDER_NAME : str = "json_files"
-ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME: str = "ALL_models_result.xlsx"
+ALL_MODELS_RESULTS_DATA_EXCEL_FILE_NAME: str = "all_models_result.xlsx"
 BEST_MODEL_RESULT_DATA_EXCEL_FILE_NAME: str = "best_model_result.xlsx"
-ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME: str = "ALL_models_result.json"
+ALL_MODELS_RESULTS_DATA_JSON_FILE_NAME: str = "all_models_result.json"
 BEST_MODEL_RESULT_DATA_JSON_FILE_NAME: str = "best_model_result.json"
 EXCEL_AND_JSON_FILES_FOLDER_NAME: str = "excel_and_json_files"
+BEST_MODEL_NAME: str = "model.pkl"
+BEST_MODEL_XGB_NAME: str = "model.xgb"
 
 #s3 constants
 BUCKET_NAME:str = 'wafersensorsdata'
 S3_TRAINING_DATA_FOLDER_NAME: str = "training_data"
 S3_RETRAINING_DATA_FOLDER_NAME: str = "retraining_data"
 S3_CLIENT_DB_FOLDER_NAME: str = "client_db_data"
+S3_PREDICTION_DATA_FOLDERNAME: str = "predicted_files"
 DEFAULT_TRAINING_BATCH_FILES:str = "training_batch_files"
+LOCAL_PREDICTION_MODELS_FOLDER_NAME: str = "prediction_models"
+ETAG_DATA_JSON_FILE_NAME:str = "etag_data.json"
+
+# model evolution constants
+DAGSHUB_REPO_OWNER_NAME:str = 'Raveenkumar'
+DAGSHUB_REPO_NAME:str = 'SENSOR-FAULT-DETECTION'
+CONFUSION_MATRIX_FOLDER_NAME:str = "confusion_matrix_images"
+
+# datadrift constants
+DATA_DRIFT_FILE_NAME:str = 'data_drift.html'
+DATA_DRIFT_THRESHOLD_VALUE:float = 0.30
+
+# prediction constants
+PREDICTION_DATA_FILE_NAME: str = "predictions.xlsx"
+FINAL_PREDICTION_FILE_NAME: str = "final_prediction_file.csv"
+FINAL_OUTPUT_COLUMN_NAME: str = 'Final_Output'
+FEEDBACK_COLUMN_NAME:str = "Feedback"
+CONFIDENCE_COLUMN_NAME:str = "Confidence"
+TARGET_FEATURE_ZERO_MAP:str = 'Working'
+TARGET_FEATURE_ONE_MAP:str = 'NotWorking'
 
 
 
