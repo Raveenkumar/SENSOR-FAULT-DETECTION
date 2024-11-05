@@ -215,7 +215,7 @@ async def train_route(request: Request, background_tasks: BackgroundTasks) -> _T
     background_tasks.add_task(train_model)
     return templates.TemplateResponse("training.html", {"request": request})
 
-@app.get("A")
+@app.get("/training_results")
 async def get_training_results_route(request: Request, background_tasks: BackgroundTasks) -> _TemplateResponse:
     """
     Renders the training results report page.
