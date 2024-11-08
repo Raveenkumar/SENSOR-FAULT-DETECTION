@@ -1,0 +1,15 @@
+.vscode
+artifacts
+db_folder_structure
+logs
+venv
+mlruns
+notebook
+project_documents
+SENSOR_FAULT_DETECTION.egg-info
+venv
+.env
+.gitifnore
+README.md
+template.py
+test.py

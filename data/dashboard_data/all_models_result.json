@@ -168,13 +168,13 @@
                 "criterion": "entropy",
                 "bootstrap": false
             },
-            "training_score": 0.9999999999999999,
+            "training_score": 1.0,
             "test_score": 1.0,
-            "accuracy": 0.9958677685950413,
-            "recall": 0.9911504424778761,
+            "accuracy": 1.0,
+            "recall": 1.0,
             "precision": 1.0,
-            "f1_score": 0.9955555555555555,
-            "auc_score": 0.995575221238938
+            "f1_score": 1.0,
+            "auc_score": 1.0
         },
         "xgbclassifier": {
             "best_param": {

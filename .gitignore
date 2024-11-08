@@ -165,11 +165,12 @@ cython_debug/
 # ignore doc files
 project_documents/DPR.docx
 project_documents/HLD.docx
+project_documents/LLD.docx
 
 # unwanted notebook uploads
 notebook/Prediction_Batch_files/
 notebook/Training_Batch_Files/
-notebook/Testing.ipynb
+
 
 
 # vscode spell checker
@@ -186,7 +187,6 @@ notebook/training_file_data/
 
 
 # change need
-notebook/
 src/pipeline/train_models.py
 cluster_data.csv
 db_folder_structure/
