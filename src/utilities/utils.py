@@ -733,7 +733,7 @@ def models_auc_threshold_satisfied() -> bool:
             logger.error(msg=f"models_auc_threshold_satisfied :: Status:Failed :: error_message:{error_message}")
             raise error_message     
 
-def clear_artifact_folder(project_root:str) -> None:
+def clear_artifact_folder(artifact_dir:str) -> None:
     """
     Clears the contents of the 'artifacts' directory located in the specified project root.
 
@@ -747,8 +747,8 @@ def clear_artifact_folder(project_root:str) -> None:
         SensorFaultException: If an error occurs while attempting to delete files or directories, 
         an exception is raised with details about the failure.
     """
-    artifact_dir = os.path.join(project_root, 'artifacts')  # 'artifacts' folder in the root
-    logger.info(f'project root folder: {project_root}')
+    # artifact_dir = os.path.join(project_root, 'artifacts')  # 'artifacts' folder in the root
+    # logger.info(f'project root folder: {project_root}')
     logger.info(f'artifact_dir folder: {artifact_dir}')
     
     try:

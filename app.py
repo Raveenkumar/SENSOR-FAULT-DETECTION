@@ -34,7 +34,8 @@ c_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 
 # dynamic way get artifact folder for clear folder 
 project_root = os.path.dirname(os.path.abspath(__file__))
-
+artifact_dir = os.path.join(project_root, 'artifacts')
+os.makedirs(artifact_dir,exist_ok=True)
 app = FastAPI()
 
 app.add_middleware(
@@ -172,7 +173,7 @@ async def sync_s3_training_data() -> None:
             logger.info("End uploading data into cloud!")
             
             # clear the artifact folder
-            clear_artifact_folder(project_root=project_root) 
+            clear_artifact_folder(artifact_dir=artifact_dir) 
             
             upload_status["completed"] = True  # Mark upload as completed
             
@@ -640,7 +641,7 @@ def upload_s3_prediction_data() -> None:
         logger.info("End uploading data into cloud!")
         
         # clear the artifact folder data
-        clear_artifact_folder(project_root=project_root)
+        clear_artifact_folder(artifact_dir=artifact_dir)
         
     except Exception as e:
         print(f"Upload failed: {e}")    
