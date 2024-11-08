@@ -176,8 +176,7 @@ notebook/Training_Batch_Files/
 # vscode spell checker
 .vscode/
 
-#temporary disable artifact
-artifacts/
+
 
 # some files
 src/training_pipeline.py

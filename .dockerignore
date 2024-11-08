@@ -1,7 +1,5 @@
 .vscode
-artifacts
 db_folder_structure
-logs
 venv
 mlruns
 notebook
