@@ -12,7 +12,8 @@ DASHBOARD_DATA_FOLDER_NAME: str = "dashboard_data"
 
 #logs constants
 LOG_FOLDER_NAME:str = "logs"
-LOG_FILE_NAME:str = f"{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.log"
+# LOG_FILE_NAME:str = f"{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.log"
+LOG_FILE_NAME:str = "logs_file.log"
 
 
 #data ingestion constants
