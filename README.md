@@ -20,7 +20,7 @@ The **Wafer Fault Detection System** is designed to streamline the semiconductor
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.12 or higher
 - Essential libraries (see `requirements.txt` for detailed list)
 
 ### Installation
@@ -74,38 +74,27 @@ The **Wafer Fault Detection System** is designed to streamline the semiconductor
 ![Prediction-Dashboard](./project_documents/wireframe_images/prediction_dashboard4.png)
 ![Prediction-Dashboard](./project_documents/wireframe_images/validaiton_logs.png)
 ![Prediction-Dashboard](./project_documents/wireframe_images/prediction_file.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/prediction_dashboard4.png)
+
 
 ### Training Dashboard
 
 - Real-time insights into model training.
 - Displays metrics like accuracy, loss, and validation score.
 - Automatically updates with each training epoch.
-![Prediction-Dashboard](./project_documents/wireframe_images/training_process.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard2.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard3.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard4.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard5.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard6.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard7.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard8.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard9.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard10.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard11.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard12.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard13.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_process.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard1.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard2.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard3.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard4.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard5.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard6.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard7.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard8.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard9.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard10.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard11.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard12.png)
+![Training-Dashboard](./project_documents/wireframe_images/training_dashboard13.png)
 
 ## Data Drift Detection
 
