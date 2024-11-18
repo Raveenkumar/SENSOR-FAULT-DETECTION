@@ -5,9 +5,22 @@
 
 The **Wafer Fault Detection System** is designed to streamline the semiconductor manufacturing process by detecting faults in wafers early. This repository contains everything needed to train, validate, and monitor a machine learning model that predicts wafer faults based on sensor data.
 
+- Project Presentation
+[Presentation](<project_documents/Project Presentation.pdf>)
+
+- HLD
+[HLD](project_documents/HLD.pdf)
+
+- LLD 
+[LLD](project_documents/LLD.pdf)
+
+- Wireframe
+[Wireframe](project_documents/WIREFRAME.pdf)
+
 ## Table of Contents
 
 - [Overview](#overview)
+- [Project DataFlow](#ProjectDataFlow)
 - [Getting Started](#getting-started)
 - [Dashboards](#dashboards)
 - [Data Drift Detection](#data-drift-detection)
@@ -15,6 +28,12 @@ The **Wafer Fault Detection System** is designed to streamline the semiconductor
 - [Model Logging and Tracking](#model-logging-and-tracking)
 - [Contributing](#contributing)
 - [License](#license)
+
+## Project DataFlow
+
+##### Implemented custom pipeline which can handle seamlessly and provide better accuracy
+![dataflow](./project_documents/wireframe_images/dataflow.png)
+
 
 ## Getting Started
 
@@ -72,9 +91,11 @@ The **Wafer Fault Detection System** is designed to streamline the semiconductor
 ![Prediction-Dashboard](./project_documents/wireframe_images/prediction_dashboard2.png)
 ![Prediction-Dashboard](./project_documents/wireframe_images/prediction_dashboard3.png)
 ![Prediction-Dashboard](./project_documents/wireframe_images/prediction_dashboard4.png)
+- **Validation Logs**: Check `validation_logs.xlsx` for details on data validation steps and issues.
 ![Prediction-Dashboard](./project_documents/wireframe_images/validaiton_logs.png)
+-**Predictions**: Predictions are saved in `predictions.csv`.
 ![Prediction-Dashboard](./project_documents/wireframe_images/prediction_file.png)
-![Prediction-Dashboard](./project_documents/wireframe_images/prediction_dashboard4.png)
+
 
 ### Training Dashboard
 
@@ -112,14 +133,16 @@ The **Wafer Fault Detection System** is designed to streamline the semiconductor
 Data drift is automatically monitored and detected:
 - If data drift exceeds a predefined threshold, an alert is generated.
 - Notification emails are sent to both the backend and client teams to address any major drifts.
-
+- **Backend team Alert Mail** 
 ![Datadrift](./project_documents/wireframe_images/driftreport_backendteam.png)
+- **Client team Alert Mail** 
 ![Datadrift](./project_documents/wireframe_images/driftreport_client.png)
 
 
 ## Feedback and Continuous Improvement
 
 - The feedback system integrates client reviews through `feedback.csv`.
+- This feedback file contains a column as confidence which is probability of outcome 
 - Once feedback is incorporated, retrain the model to adapt to new data trends.
 - This continuous cycle improves model accuracy and relevancy.
 ![feedback](./project_documents/wireframe_images/feedbackfile.png)
@@ -135,6 +158,15 @@ This project uses MLflow for experiment tracking:
 3. Use tags (e.g., version 1.0, type: pandas) for easy categorization and tracking.
 
 ![mlflow](./project_documents/wireframe_images/mlflow.png)
+
+- Check the Dagshub repo:
+![Dasghubrepo](https://dagshub.com/Raveenkumar/SENSOR-FAULT-DETECTION.mlflow/#/experiments/0?searchFilter=&orderByKey=attributes.start_time&orderByAsc=false&startTime=ALL&lifecycleFilter=Active&modelVersionFilter=All+Runs&datasetsFilter=W10%3D)
+
+
+## System Logging :
+- All Application logs stored in aws-cloudwatch 
+
+![logs](./project_documents/wireframe_images/cloudwatch.png)
 
 ## Contributing
 

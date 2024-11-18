@@ -22,15 +22,17 @@
         }
     },
     "Cluster:1": {
-        "randomforest": {
+        "xgbclassifier": {
             "best_param": {
-                "n_estimators": 200,
-                "min_samples_split": 2,
-                "min_samples_leaf": 1,
-                "max_features": "log2",
-                "max_depth": 10,
-                "criterion": "entropy",
-                "bootstrap": false
+                "subsample": 0.9,
+                "reg_lambda": 10,
+                "reg_alpha": 1,
+                "n_estimators": 100,
+                "min_child_weight": 1,
+                "max_depth": 3,
+                "learning_rate": 0.2,
+                "gamma": 0.2,
+                "colsample_bytree": 0.9
             },
             "training_score": 1.0,
             "test_score": 1.0,
