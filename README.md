@@ -149,7 +149,7 @@ This project uses MLflow for experiment tracking:
 ![mlflow](./project_documents/wireframe_images/mlflow.png)
 
 - Check the Dagshub repo:
-![Dasghubrepo](https://dagshub.com/Raveenkumar/SENSOR-FAULT-DETECTION.mlflow/#/experiments/0?searchFilter=&orderByKey=attributes.start_time&orderByAsc=false&startTime=ALL&lifecycleFilter=Active&modelVersionFilter=All+Runs&datasetsFilter=W10%3D)
+![Dasghubrepo](https://dagshub.com/Raveenkumar/SENSOR-FAULT-DETECTION.mlflow)
 
 
 ## System Logging :
